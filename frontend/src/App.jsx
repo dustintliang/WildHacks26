@@ -108,7 +108,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-950 text-white overflow-hidden">
+    <div className="flex flex-col h-screen text-white overflow-hidden">
       <Header />
 
       <main className="flex-1 overflow-hidden">
