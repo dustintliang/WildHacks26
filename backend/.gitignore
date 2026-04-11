@@ -18,6 +18,7 @@ env/
 
 # Output and temp files
 output/
+!output/demo-job/
 temp/
 *.nii
 *.nii.gz

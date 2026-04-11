@@ -1,0 +1,186 @@
+{
+  "job_id": "demo-job",
+  "status": "complete",
+  "output_mask_path": "/output/demo-job/test-job-1d5058eb_vessel_mask.nii.gz",
+  "binary_segments": {
+    "left_ICA": {
+      "visible": true,
+      "findings": {
+        "stenosis": [],
+        "aneurysms": [],
+        "tortuosity": {
+          "distance_factor": 1.553,
+          "soam": 1.1129,
+          "flagged": true
+        }
+      }
+    },
+    "right_ICA": {
+      "visible": true,
+      "findings": {
+        "stenosis": [
+          {
+            "artery_name": "right_ICA",
+            "voxel_coordinates": [229.0, 226.0, 12.0],
+            "mni_coordinates": [5.690189791552257, 0.7346496473765001, -5.296388069167733],
+            "stenosis_percent": 75.0,
+            "severity": "severe",
+            "affected_segment_length_mm": 8.2,
+            "r_min": 0.5,
+            "r_reference": 2.0
+          }
+        ],
+        "aneurysms": [
+          {
+            "artery_name": "right_ICA",
+            "bifurcation_voxel_coords": [232.0, 225.0, 11.0],
+            "mni_coords": [4.181945040210849, 0.17957682069391012, -5.705156903713942],
+            "size_ratio": 0.78,
+            "aspect_ratio": 3.85,
+            "deviation_score": 0.72,
+            "confidence": "moderate"
+          }
+        ],
+        "tortuosity": {
+          "distance_factor": 2.615,
+          "soam": 0.5793,
+          "flagged": true
+        }
+      }
+    },
+    "left_MCA": {
+      "visible": true,
+      "findings": {
+        "stenosis": [
+          {
+            "artery_name": "left_MCA",
+            "voxel_coordinates": [310.0, 264.0, 121.0],
+            "mni_coordinates": [-34.38091527787037, 22.775798483984545, 17.828151647001505],
+            "stenosis_percent": 32.7,
+            "severity": "normal"
+          }
+        ],
+        "aneurysms": [
+          {
+            "artery_name": "left_MCA",
+            "bifurcation_voxel_coords": [295.0, 262.0, 141.0],
+            "size_ratio": 1.58,
+            "aspect_ratio": 2.58,
+            "confidence": "moderate"
+          }
+        ],
+        "tortuosity": {
+          "distance_factor": 4.473,
+          "soam": 0.5254,
+          "flagged": true
+        }
+      }
+    },
+    "right_MCA": {
+      "visible": true,
+      "findings": {
+        "stenosis": [],
+        "aneurysms": [],
+        "tortuosity": {
+          "distance_factor": 9.578,
+          "soam": 0.8001,
+          "flagged": true
+        }
+      }
+    },
+    "left_ACA": {
+      "visible": true,
+      "findings": {
+        "stenosis": [
+          {
+            "artery_name": "left_ACA",
+            "stenosis_percent": 47.6,
+            "severity": "normal"
+          }
+        ],
+        "aneurysms": [
+          {
+            "artery_name": "left_ACA",
+            "size_ratio": 1.73,
+            "aspect_ratio": 2.50,
+            "confidence": "high"
+          }
+        ],
+        "tortuosity": {
+          "distance_factor": 8.069,
+          "soam": 0.5639,
+          "flagged": true
+        }
+      }
+    },
+    "right_ACA": {
+      "visible": true,
+      "findings": {
+        "stenosis": [],
+        "aneurysms": [],
+        "tortuosity": {
+          "distance_factor": 3.348,
+          "soam": 0.4441,
+          "flagged": true
+        }
+      }
+    }
+  },
+  "risk_scores": {
+    "large_vessel_stroke": {
+      "score": 84.5,
+      "severity": "high",
+      "drivers": [
+        "Stenosis: 75.0% in right_ICA",
+        "Tortuosity: DF=9.58 in right_MCA",
+        "Aneurysm candidate: high confidence in left_ACA"
+      ]
+    },
+    "lacunar_stroke": {
+      "score": 50.1,
+      "severity": "moderate",
+      "drivers": [
+        "SVD ratio: 0.071 (below 0.4 threshold)"
+      ]
+    },
+    "aneurysm_rupture": {
+      "score": 49.6,
+      "severity": "moderate",
+      "drivers": [
+        "Size ratio: 1.73 in left_ACA",
+        "Aspect ratio: 2.50",
+        "Confidence: high",
+        "Patient age: 60"
+      ]
+    }
+  },
+  "narrative_summary": "CLINICAL SUMMARY: The analysis of the provided TOF-MRA (1.nii) reveals a significant 75% stenosis in the distal segment of the Right Internal Carotid Artery (ICA). Multiple moderate-confidence aneurysm candidates were identified in the Right ICA and Left Anterior Cerebral Artery (ACA). Bilateral Middle Cerebral Artery (MCA) segments show increased tortuosity. Small Vessel Disease (SVD) markers are present but below the critical threshold for acute intervention. RECOMMENDATION: Urgent neurosurgical consultation is advised for the Right ICA stenosis, with follow-up angiography to characterize the suspected aneurysms.",
+  "slice_images": {
+    "left_ICA": {
+      "axial": "/output/demo-job/demo-job_left_ICA_axial.png",
+      "coronal": "/output/demo-job/demo-job_left_ICA_coronal.png"
+    },
+    "right_ICA": {
+      "axial": "/output/demo-job/demo-job_right_ICA_axial.png",
+      "coronal": "/output/demo-job/demo-job_right_ICA_coronal.png"
+    },
+    "left_MCA": {
+      "axial": "/output/demo-job/demo-job_left_MCA_axial.png",
+      "coronal": "/output/demo-job/demo-job_left_MCA_coronal.png"
+    },
+    "right_MCA": {
+      "axial": "/output/demo-job/demo-job_right_MCA_axial.png",
+      "coronal": "/output/demo-job/demo-job_right_MCA_coronal.png"
+    },
+    "left_ACA": {
+      "axial": "/output/demo-job/demo-job_left_ACA_axial.png",
+      "coronal": "/output/demo-job/demo-job_left_ACA_coronal.png"
+    },
+    "right_ACA": {
+      "axial": "/output/demo-job/demo-job_right_ACA_axial.png",
+      "coronal": "/output/demo-job/demo-job_right_ACA_coronal.png"
+    }
+  },
+  "warnings": [],
+  "disclaimer": "This output is generated by a research pipeline and does not constitute clinical diagnosis."
+}
