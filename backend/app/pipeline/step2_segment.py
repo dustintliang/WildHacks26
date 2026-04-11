@@ -8,6 +8,7 @@ Pipeline Step 2:
 """
 
 import logging
+import os
 import shutil
 import subprocess
 import sys
@@ -93,6 +94,10 @@ def _try_vesselboost(
         return False
 
     try:
+        # Add VesselBoost directory to PYTHONPATH so it can find its 'library' package
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(VESSELBOOST_DIR) + os.pathsep + env.get("PYTHONPATH", "")
+
         # Step 1: Initial prediction
         logger.info("Running VesselBoost prediction...")
         prediction_output = Path(output_dir) / f"{job_id}_vb_prediction"
@@ -102,11 +107,11 @@ def _try_vesselboost(
             sys.executable, str(prediction_script),
             "--image_path", str(input_path),
             "--output_path", str(prediction_output),
-            "--pretrained", str(VESSELBOOST_MODEL_DIR),
+            "--pretrained", str(VESSELBOOST_MODEL_DIR / "BM_VB2_aug_all_ep2k_bat_10_0903"),
             "--prep_mode", "4",
         ]
         result = subprocess.run(
-            cmd_predict, capture_output=True, text=True, timeout=1800
+            cmd_predict, capture_output=True, text=True, timeout=1800, env=env
         )
         if result.returncode != 0:
             logger.warning(f"VesselBoost prediction failed: {result.stderr[:500]}")
@@ -128,11 +133,11 @@ def _try_vesselboost(
             sys.executable, str(tta_script),
             "--image_path", str(input_path),
             "--output_path", str(tta_output),
-            "--pretrained", str(VESSELBOOST_MODEL_DIR),
+            "--pretrained", str(VESSELBOOST_MODEL_DIR / "BM_VB2_aug_all_ep2k_bat_10_0903"),
             "--proxy", str(pred_file),
         ]
         result = subprocess.run(
-            cmd_tta, capture_output=True, text=True, timeout=3600
+            cmd_tta, capture_output=True, text=True, timeout=3600, env=env
         )
 
         # Use TTA output if available, otherwise use prediction output
