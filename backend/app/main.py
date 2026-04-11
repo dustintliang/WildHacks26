@@ -16,6 +16,8 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.config import OUTPUT_DIR, TEMP_DIR
 from app.utils.gpu_check import check_gpu
@@ -73,6 +75,19 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# ---------------------------------------------------------------------------
+# CORS & Static Files
+# ---------------------------------------------------------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # For hacking ease, allow all origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.mount("/output", StaticFiles(directory=str(OUTPUT_DIR)), name="output")
 
 
 # ---------------------------------------------------------------------------
@@ -149,6 +164,43 @@ async def analyze(file: UploadFile = File(...)):
                 f"Analysis started for '{filename}'. "
                 f"Poll GET /results/{job_id} for results."
             ),
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /analyze/demo
+# ---------------------------------------------------------------------------
+@app.post("/analyze/demo", tags=["Analysis"])
+async def analyze_demo():
+    """
+    Start the analysis pipeline on the preloaded dataset/1.nii file.
+    """
+    demo_path = Path("../dataset/1.nii").resolve()
+    if not demo_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Demo dataset not found at {demo_path}",
+        )
+        
+    job_id = str(uuid.uuid4())
+    logger.info(f"New demo analysis job: {job_id}")
+
+    # Initialize job status
+    _jobs[job_id] = {
+        "status": "processing",
+        "result": None,
+    }
+
+    # Launch pipeline in background
+    asyncio.create_task(_run_pipeline_async(job_id, str(demo_path)))
+
+    return JSONResponse(
+        status_code=202,
+        content={
+            "job_id": job_id,
+            "status": "processing",
+            "message": "Demo analysis started. Poll GET /results/{job_id} for results.",
         },
     )
 

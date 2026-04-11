@@ -4,7 +4,7 @@ import UploadZone from './components/UploadZone'
 import NiftiViewer from './components/NiftiViewer'
 import AnalysisPanel from './components/AnalysisPanel'
 
-const API_BASE = ''
+const API_BASE = 'http://localhost:8000'
 
 const LOADING_STEPS = [
   { label: 'Uploading scan', desc: 'Sending file to server...' },
@@ -21,7 +21,7 @@ export default function App() {
   const [error, setError] = useState(null)
   const [loadingStep, setLoadingStep] = useState(0)
 
-  const handleSubmit = async (file) => {
+  const handleSubmit = async (file, isDemo = false) => {
     setError(null)
     setOriginalFile(file)
     setMaskedBlob(null)
@@ -31,44 +31,68 @@ export default function App() {
     setPhase('processing')
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-
+      let res;
       setLoadingStep(1)
-
-      const res = await fetch(`${API_BASE}/api/analyze`, {
-        method: 'POST',
-        body: formData,
-      })
+      
+      if (isDemo) {
+        res = await fetch(`${API_BASE}/analyze/demo`, {
+          method: 'POST',
+        })
+      } else {
+        const formData = new FormData()
+        formData.append('file', file)
+        res = await fetch(`${API_BASE}/analyze`, {
+          method: 'POST',
+          body: formData,
+        })
+      }
 
       if (!res.ok) {
         const text = await res.text()
         throw new Error(text || `Server returned ${res.status}`)
       }
 
+      // Received 202 {"job_id": "..."}
+      const initialData = await res.json()
+      const jobId = initialData.job_id
+      
       setLoadingStep(2)
-      const data = await res.json()
+      
+      // Poll until complete
+      let data;
+      while (true) {
+        await new Promise(resolve => setTimeout(resolve, 3000)); // Poll every 3s
+        const pollRes = await fetch(`${API_BASE}/results/${jobId}`)
+        if (!pollRes.ok) throw new Error(`Polling failed: ${pollRes.status}`)
+        data = await pollRes.json()
+        
+        if (data.status === 'complete' || data.status === 'failed') break;
+        // if processing, continue
+      }
+      
+      if (data.status === 'failed') {
+         throw new Error(data.message || 'Pipeline failed during processing')
+      }
 
       let blob = null
-      if (data.masked_nifti_base64) {
-        const binary = atob(data.masked_nifti_base64)
-        const bytes = new Uint8Array(binary.length)
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-        blob = new Blob([bytes], { type: 'application/octet-stream' })
-      } else if (data.masked_nifti_url) {
-        const url = data.masked_nifti_url.startsWith('http')
-          ? data.masked_nifti_url
-          : `${API_BASE}${data.masked_nifti_url}`
-        const r = await fetch(url)
-        if (!r.ok) throw new Error('Failed to fetch masked NIFTI file')
-        blob = await r.blob()
+      // Download the vessel mask
+      if (data.output_mask_path) {
+         // the path is absolute on the server, but we serve the /output directory
+         // so we extract the filename:
+         const filename = data.output_mask_path.split(/[\/\\]/).pop();
+         const r = await fetch(`${API_BASE}/output/${filename}`);
+         if (!r.ok) throw new Error('Failed to fetch the resulting vessel mask');
+         blob = await r.blob();
       }
 
       setLoadingStep(3)
       setMaskedBlob(blob)
-      setAnalysis(data.analysis ?? '')
+      
+      const narrative = data?.gemini_report?.narrative_summary || "No AI narrative generated.";
+      setAnalysis(narrative)
       setPhase('results')
     } catch (e) {
+      console.error(e)
       setError(e.message)
       setPhase('upload')
     }

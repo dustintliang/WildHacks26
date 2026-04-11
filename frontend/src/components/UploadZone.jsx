@@ -102,19 +102,30 @@ export default function UploadZone({ onSubmit, error }) {
         </div>
       )}
 
-      <button
-        onClick={handleSubmit}
-        disabled={!selected}
-        className={`
-          px-8 py-3 rounded-xl font-semibold text-sm transition-all duration-200
-          ${selected
-            ? 'bg-cyan-500 text-black hover:bg-cyan-400 active:scale-95'
-            : 'bg-gray-800 text-gray-600 cursor-not-allowed'
-          }
-        `}
-      >
-        Analyze Scan
-      </button>
+      <div className="flex flex-col gap-3 w-full max-w-md items-center">
+        <button
+          onClick={handleSubmit}
+          disabled={!selected}
+          className={`
+            w-full px-8 py-3 rounded-xl font-semibold text-sm transition-all duration-200
+            ${selected
+              ? 'bg-cyan-500 text-black hover:bg-cyan-400 active:scale-95'
+              : 'bg-gray-800 text-gray-600 cursor-not-allowed'
+            }
+          `}
+        >
+          Analyze Scan
+        </button>
+        <button
+          onClick={() => onSubmit(null, true)}
+          className="w-full px-8 py-3 rounded-xl font-semibold text-sm transition-all duration-200 bg-indigo-600 text-white hover:bg-indigo-500 active:scale-95 border border-indigo-500/50 flex items-center justify-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          Run Demo (1.nii Dataset)
+        </button>
+      </div>
 
       <div className="flex gap-8 text-center">
         {[
