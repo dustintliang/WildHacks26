@@ -8,7 +8,7 @@ crash the whole job. Failed steps are logged and marked in the response.
 import logging
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 
@@ -25,7 +25,7 @@ from app.utils.gpu_check import check_gpu
 logger = logging.getLogger(__name__)
 
 
-def run_pipeline(job_id: str, input_path: str) -> dict:
+def run_pipeline(job_id: str, input_path: str, progress_callback: Callable[[int, str], None] = None) -> dict:
     """
     Execute the full 8-step cerebrovascular analysis pipeline.
 
@@ -74,6 +74,7 @@ def run_pipeline(job_id: str, input_path: str) -> dict:
     logger.info(f"{'='*60}")
     logger.info(f"STEP 1: Preprocessing — Job {job_id}")
     logger.info(f"{'='*60}")
+    if progress_callback: result = progress_callback(1, "Preprocessing NIfTI volume...")
     try:
         from app.pipeline.step1_preprocess import preprocess
         preprocessed_path, step_warnings = preprocess(
@@ -98,6 +99,7 @@ def run_pipeline(job_id: str, input_path: str) -> dict:
     logger.info(f"{'='*60}")
     logger.info(f"STEP 2: Vessel Segmentation — Job {job_id}")
     logger.info(f"{'='*60}")
+    if progress_callback: result = progress_callback(2, "Running AI Vessel Segmentation...")
     try:
         from app.pipeline.step2_segment import segment_vessels
         vessel_mask_path, step_warnings = segment_vessels(
@@ -116,6 +118,7 @@ def run_pipeline(job_id: str, input_path: str) -> dict:
     logger.info(f"{'='*60}")
     logger.info(f"STEP 3: Artery Labeling — Job {job_id}")
     logger.info(f"{'='*60}")
+    if progress_callback: result = progress_callback(3, "Annotating cerebrovascular structures...")
     if vessel_mask_path:
         try:
             from app.pipeline.step3_label import label_arteries
@@ -137,6 +140,7 @@ def run_pipeline(job_id: str, input_path: str) -> dict:
     logger.info(f"{'='*60}")
     logger.info(f"STEP 4: Centerline Extraction — Job {job_id}")
     logger.info(f"{'='*60}")
+    if progress_callback: result = progress_callback(4, "Extracting anatomical centerlines...")
     if vessel_mask_path and labeled_path and artery_dict:
         try:
             from app.pipeline.step4_centerline import extract_centerlines
@@ -158,6 +162,7 @@ def run_pipeline(job_id: str, input_path: str) -> dict:
     logger.info(f"{'='*60}")
     logger.info(f"STEP 5: Feature Extraction — Job {job_id}")
     logger.info(f"{'='*60}")
+    if progress_callback: result = progress_callback(5, "Calculating pathology features (Stenosis/Tortuosity)...")
 
     # 5a. Stenosis
     try:
@@ -216,6 +221,7 @@ def run_pipeline(job_id: str, input_path: str) -> dict:
     logger.info(f"{'='*60}")
     logger.info(f"STEP 6: Slice Rendering — Job {job_id}")
     logger.info(f"{'='*60}")
+    if progress_callback: result = progress_callback(6, "Generating native 2D slices...")
     features = {
         "stenosis": stenosis_results,
         "aneurysms": aneurysm_results,
@@ -241,6 +247,7 @@ def run_pipeline(job_id: str, input_path: str) -> dict:
     logger.info(f"{'='*60}")
     logger.info(f"STEP 7: Gemini Report — Job {job_id}")
     logger.info(f"{'='*60}")
+    if progress_callback: result = progress_callback(7, "Awaiting AI interpretation report...")
     try:
         from app.pipeline.step7_gemini import generate_gemini_report
 
@@ -265,6 +272,7 @@ def run_pipeline(job_id: str, input_path: str) -> dict:
     logger.info(f"{'='*60}")
     logger.info(f"STEP 8: Risk Scoring — Job {job_id}")
     logger.info(f"{'='*60}")
+    if progress_callback: result = progress_callback(8, "Computing final medical risk scores...")
     try:
         from app.pipeline.step8_risk import compute_risk_scores
         risk_scores = compute_risk_scores(

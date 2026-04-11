@@ -4,14 +4,7 @@ import UploadZone from './components/UploadZone'
 import NiftiViewer from './components/NiftiViewer'
 import AnalysisPanel from './components/AnalysisPanel'
 
-const API_BASE = 'http://localhost:8000'
-
-const LOADING_STEPS = [
-  { label: 'Uploading scan', desc: 'Sending file to server...' },
-  { label: 'Segmentation model', desc: 'Detecting cerebrovascular lesions...' },
-  { label: 'Gemini analysis', desc: 'Generating AI interpretation...' },
-  { label: 'Preparing results', desc: 'Almost done...' },
-]
+const API_BASE = 'http://127.0.0.1:8000'
 
 export default function App() {
   const [phase, setPhase] = useState('upload')
@@ -19,32 +12,25 @@ export default function App() {
   const [maskedBlob, setMaskedBlob] = useState(null)
   const [analysis, setAnalysis] = useState('')
   const [error, setError] = useState(null)
-  const [loadingStep, setLoadingStep] = useState(0)
+  const [progress, setProgress] = useState({ step: 0, total: 8, action: 'Starting...' })
 
   const handleSubmit = async (file, isDemo = false) => {
     setError(null)
     setOriginalFile(file)
     setMaskedBlob(null)
     setAnalysis('')
-    setLoadingStep(0)
-
+    setProgress({ step: 0, total: 8, action: 'Connecting to server...' })
     setPhase('processing')
 
     try {
-      let res;
-      setLoadingStep(1)
-      
+      let res
+
       if (isDemo) {
-        res = await fetch(`${API_BASE}/analyze/demo`, {
-          method: 'POST',
-        })
+        res = await fetch(`${API_BASE}/analyze/demo`, { method: 'POST' })
       } else {
         const formData = new FormData()
         formData.append('file', file)
-        res = await fetch(`${API_BASE}/analyze`, {
-          method: 'POST',
-          body: formData,
-        })
+        res = await fetch(`${API_BASE}/analyze`, { method: 'POST', body: formData })
       }
 
       if (!res.ok) {
@@ -52,43 +38,41 @@ export default function App() {
         throw new Error(text || `Server returned ${res.status}`)
       }
 
-      // Received 202 {"job_id": "..."}
       const initialData = await res.json()
       const jobId = initialData.job_id
-      
-      setLoadingStep(2)
-      
-      // Poll until complete
-      let data;
+
+      // Poll until complete, updating progress bar on every tick
+      let data
       while (true) {
-        await new Promise(resolve => setTimeout(resolve, 3000)); // Poll every 3s
+        await new Promise(resolve => setTimeout(resolve, 2000))
         const pollRes = await fetch(`${API_BASE}/results/${jobId}`)
         if (!pollRes.ok) throw new Error(`Polling failed: ${pollRes.status}`)
         data = await pollRes.json()
-        
-        if (data.status === 'complete' || data.status === 'failed') break;
-        // if processing, continue
+
+        if (data.status === 'processing' && data.progress) {
+          setProgress(data.progress)
+        }
+
+        if (data.status === 'complete' || data.status === 'failed') break
       }
-      
+
       if (data.status === 'failed') {
-         throw new Error(data.message || 'Pipeline failed during processing')
+        throw new Error(data.message || 'Pipeline failed during processing')
       }
+
+      setProgress({ step: 8, total: 8, action: 'Analysis complete!' })
 
       let blob = null
-      // Download the vessel mask
       if (data.output_mask_path) {
-         // the path is absolute on the server, but we serve the /output directory
-         // so we extract the filename:
-         const filename = data.output_mask_path.split(/[\/\\]/).pop();
-         const r = await fetch(`${API_BASE}/output/${filename}`);
-         if (!r.ok) throw new Error('Failed to fetch the resulting vessel mask');
-         blob = await r.blob();
+        const parts = data.output_mask_path.split(/[\/\\]/)
+        const filename = parts.pop()
+        const jobFolder = parts.pop()
+        const r = await fetch(`${API_BASE}/output/${jobFolder}/${filename}`)
+        if (r.ok) blob = await r.blob()
       }
 
-      setLoadingStep(3)
       setMaskedBlob(blob)
-      
-      const narrative = data?.gemini_report?.narrative_summary || "No AI narrative generated.";
+      const narrative = data?.gemini_report?.narrative_summary || 'AI narrative not available.'
       setAnalysis(narrative)
       setPhase('results')
     } catch (e) {
@@ -104,7 +88,7 @@ export default function App() {
     setMaskedBlob(null)
     setAnalysis('')
     setError(null)
-    setLoadingStep(0)
+    setProgress({ step: 0, total: 8, action: 'Starting...' })
   }
 
   return (
@@ -118,15 +102,13 @@ export default function App() {
 
         {(phase === 'processing' || phase === 'results') && (
           <div className="flex h-full">
-            {/* Left: NIFTI viewer — shows original scan immediately, mask overlaid when ready */}
             <div className="flex-[3] min-w-0">
               <NiftiViewer originalFile={originalFile} maskedBlob={maskedBlob} />
             </div>
 
-            {/* Right: loading panel while processing, analysis panel when done */}
             <div className="flex-[2] min-w-0 border-l border-gray-800 overflow-y-auto">
               {phase === 'processing' ? (
-                <ProcessingPanel step={loadingStep} steps={LOADING_STEPS} />
+                <ProcessingPanel progress={progress} />
               ) : (
                 <AnalysisPanel analysis={analysis} onReset={reset} />
               )}
@@ -138,60 +120,113 @@ export default function App() {
   )
 }
 
-function ProcessingPanel({ step, steps }) {
+function ProcessingPanel({ progress }) {
+  const { step, total, action } = progress
+  const pct = total > 0 ? Math.round((step / total) * 100) : 0
+
+  const STEP_LABELS = [
+    'Preprocessing',
+    'Vessel Segmentation',
+    'Artery Labeling',
+    'Centerline Extraction',
+    'Feature Analysis',
+    'Slice Rendering',
+    'AI Report',
+    'Risk Scoring',
+  ]
+
   return (
     <div className="flex flex-col h-full">
+      {/* Header */}
       <div className="px-5 py-4 border-b border-gray-800 shrink-0">
-        <h2 className="text-sm font-semibold">Processing Scan</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Segmentation model running...</p>
+        <h2 className="text-sm font-semibold text-white">Analyzing Scan</h2>
+        <p className="text-xs text-gray-500 mt-0.5">Cerebrovascular pipeline running...</p>
       </div>
 
-      <div className="flex-1 px-5 py-6 space-y-3">
-        {steps.map((s, i) => {
-          const done = i < step
-          const active = i === step
-          return (
-            <div
-              key={i}
-              className={`flex items-start gap-3 px-4 py-3 rounded-xl border transition-colors ${
-                active
-                  ? 'border-cyan-700 bg-cyan-950/30'
-                  : done
-                  ? 'border-gray-700 bg-gray-900/40'
-                  : 'border-gray-800 bg-transparent'
-              }`}
-            >
-              <div className="mt-0.5 shrink-0">
-                {done ? (
-                  <div className="w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center">
-                    <svg className="w-3 h-3 text-black" viewBox="0 0 12 12" fill="none">
-                      <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                ) : active ? (
-                  <div className="w-5 h-5 rounded-full border-2 border-t-cyan-400 border-gray-600 animate-spin" />
-                ) : (
-                  <div className="w-5 h-5 rounded-full border-2 border-gray-700" />
-                )}
+      {/* Progress section */}
+      <div className="flex-1 px-5 py-6 flex flex-col gap-6">
+
+        {/* Big percentage display */}
+        <div className="text-center">
+          <span className="text-5xl font-bold tabular-nums" style={{
+            background: 'linear-gradient(90deg, #22d3ee, #818cf8)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>
+            {pct}%
+          </span>
+          <p className="text-xs text-gray-400 mt-2 min-h-[1.25rem] transition-all duration-500">
+            {action}
+          </p>
+        </div>
+
+        {/* Progress bar track */}
+        <div className="relative h-3 bg-gray-800 rounded-full overflow-hidden">
+          <div
+            className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
+            style={{
+              width: `${pct}%`,
+              background: 'linear-gradient(90deg, #06b6d4, #6366f1)',
+              boxShadow: '0 0 12px rgba(99, 102, 241, 0.6)',
+            }}
+          />
+          {/* Animated shimmer overlay */}
+          <div
+            className="absolute inset-y-0 left-0 rounded-full pointer-events-none"
+            style={{
+              width: `${pct}%`,
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%)',
+              animation: 'shimmer 1.8s infinite',
+            }}
+          />
+        </div>
+
+        {/* 8-step grid */}
+        <div className="grid grid-cols-4 gap-1.5">
+          {STEP_LABELS.map((label, i) => {
+            const stepNum = i + 1
+            const isDone = stepNum < step
+            const isActive = stepNum === step
+            return (
+              <div
+                key={label}
+                className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-300 ${
+                  isActive ? 'bg-indigo-950/50 border border-indigo-700/50' :
+                  isDone   ? 'bg-gray-900/50 border border-gray-700/30' :
+                             'border border-transparent'
+                }`}
+              >
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${
+                  isDone   ? 'bg-cyan-500 text-black' :
+                  isActive ? 'border-2 border-indigo-400 text-indigo-400 animate-pulse' :
+                             'border-2 border-gray-700 text-gray-700'
+                }`}>
+                  {isDone ? '✓' : stepNum}
+                </div>
+                <span className={`text-[9px] text-center leading-tight transition-colors duration-300 ${
+                  isActive ? 'text-indigo-300' : isDone ? 'text-gray-500' : 'text-gray-700'
+                }`}>
+                  {label}
+                </span>
               </div>
-              <div>
-                <p className={`text-sm font-medium ${active ? 'text-white' : done ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {s.label}
-                </p>
-                {active && (
-                  <p className="text-xs text-gray-500 mt-0.5">{s.desc}</p>
-                )}
-              </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
 
+      {/* Footer */}
       <div className="px-5 py-4 border-t border-gray-800 shrink-0">
         <p className="text-xs text-gray-600 leading-relaxed">
-          The original scan is rendering in the viewer. The lesion mask will appear as an overlay once segmentation completes.
+          CPU mode: ~4–5 min. The NIfTI viewer renders the original scan while the model runs.
         </p>
       </div>
+
+      <style>{`
+        @keyframes shimmer {
+          0%   { transform: translateX(-100%); }
+          100% { transform: translateX(400%); }
+        }
+      `}</style>
     </div>
   )
 }

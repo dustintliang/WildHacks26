@@ -150,6 +150,7 @@ async def analyze(file: UploadFile = File(...)):
     _jobs[job_id] = {
         "status": "processing",
         "result": None,
+        "progress": {"step": 0, "total": 8, "action": "Starting..."},
     }
 
     # Launch pipeline in background
@@ -190,10 +191,11 @@ async def analyze_demo():
     _jobs[job_id] = {
         "status": "processing",
         "result": None,
+        "progress": {"step": 0, "total": 8, "action": "Starting..."},
     }
 
     # Launch pipeline in background
-    asyncio.create_task(_run_pipeline_async(job_id, str(demo_path)))
+    asyncio.create_task(_run_pipeline_async(job_id, str(demo_path), is_demo=True))
 
     return JSONResponse(
         status_code=202,
@@ -230,7 +232,7 @@ async def get_results(job_id: str):
             content={
                 "job_id": job_id,
                 "status": "processing",
-                "message": "Analysis is still running. Please try again later.",
+                "progress": job.get("progress", {"step": 0, "total": 8, "action": "Starting..."}),
             },
         )
     elif job["status"] == "failed":
@@ -253,11 +255,16 @@ async def get_results(job_id: str):
 # ---------------------------------------------------------------------------
 # Background pipeline runner
 # ---------------------------------------------------------------------------
-async def _run_pipeline_async(job_id: str, input_path: str):
+async def _run_pipeline_async(job_id: str, input_path: str, is_demo: bool = False):
     """Run the pipeline in a background thread."""
+    def _progress(step: int, action: str):
+        if job_id in _jobs:
+            _jobs[job_id]["progress"] = {"step": step, "total": 8, "action": action}
+        logger.info(f"[{job_id}] Progress {step}/8: {action}")
+
     try:
         from app.pipeline.orchestrator import run_pipeline
-        result = await asyncio.to_thread(run_pipeline, job_id, input_path)
+        result = await asyncio.to_thread(run_pipeline, job_id, input_path, _progress)
         _jobs[job_id] = {
             "status": "complete",
             "result": result,
@@ -271,11 +278,12 @@ async def _run_pipeline_async(job_id: str, input_path: str):
             "error": str(exc),
         }
     finally:
-        # Clean up temp file
-        temp_path = Path(input_path)
-        if temp_path.exists():
-            try:
-                temp_path.unlink()
-                logger.info(f"Cleaned up temp file: {temp_path}")
-            except Exception:
-                pass
+        # Clean up temp file (skip if it's the permanent demo dataset)
+        if not is_demo:
+            temp_path = Path(input_path)
+            if temp_path.exists():
+                try:
+                    temp_path.unlink()
+                    logger.info(f"Cleaned up temp file: {temp_path}")
+                except Exception:
+                    pass
