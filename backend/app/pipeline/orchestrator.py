@@ -5,6 +5,7 @@ Each step is wrapped in try/except so a failure in one step does not
 crash the whole job. Failed steps are logged and marked in the response.
 """
 
+import json
 import logging
 import time
 from pathlib import Path
@@ -328,7 +329,16 @@ def run_pipeline(job_id: str, input_path: str, progress_callback: Callable[[int,
         step_errors=step_errors,
     )
 
-    return response.model_dump()
+    # Save to disk for persistence
+    result_dict = response.model_dump()
+    try:
+        with open(job_dir / "result.json", "w") as f:
+            json.dump(result_dict, f, indent=2)
+        logger.info(f"Saved result.json for job {job_id}")
+    except Exception as exc:
+        logger.error(f"Failed to save result.json: {exc}")
+
+    return result_dict
 
 
 def _build_features_json(

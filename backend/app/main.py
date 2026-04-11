@@ -8,6 +8,7 @@ Provides three endpoints:
 """
 
 import asyncio
+import json
 import logging
 import shutil
 import uuid
@@ -15,7 +16,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -176,6 +177,8 @@ async def analyze(file: UploadFile = File(...)):
 async def analyze_demo():
     """
     Start the analysis pipeline on the preloaded dataset/1.nii file.
+    If a cached result exists, simulates a 10-second progressive pipeline
+    so the progress bar animates through all 8 steps.
     """
     demo_path = Path("../dataset/1.nii").resolve()
     if not demo_path.exists():
@@ -184,8 +187,40 @@ async def analyze_demo():
             detail=f"Demo dataset not found at {demo_path}",
         )
         
-    job_id = str(uuid.uuid4())
-    logger.info(f"New demo analysis job: {job_id}")
+    job_id = "demo-job"
+    logger.info(f"Demo analysis requested. checking for cache...")
+    
+    # Check for cached result
+    cache_path = OUTPUT_DIR / job_id / "result.json"
+    if cache_path.exists():
+        try:
+            with open(cache_path, "r") as f:
+                cached_result = json.load(f)
+            
+            # Initialize job as processing so the frontend sees progress
+            _jobs[job_id] = {
+                "status": "processing",
+                "result": None,
+                "progress": {"step": 0, "total": 8, "action": "Starting..."},
+            }
+            
+            # Launch simulated progressive pipeline in background
+            asyncio.create_task(_simulate_demo_progress(job_id, cached_result))
+            
+            logger.info("Demo started — simulating 10s progressive pipeline from cache.")
+            return JSONResponse(
+                status_code=202,
+                content={
+                    "job_id": job_id,
+                    "status": "processing",
+                    "message": "Demo analysis started. Poll GET /results/demo-job for results.",
+                },
+            )
+        except Exception as exc:
+            logger.warning(f"Failed to load demo cache: {exc}. Falling back to recalculation.")
+
+    # FALLBACK: Normal pipeline if no cache
+    logger.info(f"New demo analysis job (recalculating): {job_id}")
 
     # Initialize job status
     _jobs[job_id] = {
@@ -205,6 +240,18 @@ async def analyze_demo():
             "message": "Demo analysis started. Poll GET /results/{job_id} for results.",
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# GET /demo-nifti — serve the raw demo NIfTI so the viewer can load it immediately
+# ---------------------------------------------------------------------------
+@app.get("/demo-nifti", tags=["Analysis"])
+async def get_demo_nifti():
+    """Return the raw demo 1.nii file for immediate viewer loading."""
+    demo_path = Path("../dataset/1.nii").resolve()
+    if not demo_path.exists():
+        raise HTTPException(status_code=404, detail="Demo dataset not found.")
+    return FileResponse(str(demo_path), media_type="application/octet-stream", filename="1.nii")
 
 
 # ---------------------------------------------------------------------------
@@ -250,6 +297,39 @@ async def get_results(job_id: str):
             status_code=200,
             content=job["result"],
         )
+
+
+# ---------------------------------------------------------------------------
+# Simulated demo progress (10 seconds, 8 steps)
+# ---------------------------------------------------------------------------
+async def _simulate_demo_progress(job_id: str, cached_result: dict):
+    """Simulate progressive pipeline steps over ~10 seconds, then mark complete."""
+    STEP_LABELS = [
+        "Preprocessing",
+        "Vessel Segmentation",
+        "Artery Labeling",
+        "Centerline Extraction",
+        "Feature Analysis",
+        "Slice Rendering",
+        "AI Report",
+        "Risk Scoring",
+    ]
+    TOTAL_DURATION = 10.0  # seconds
+    STEP_COUNT = len(STEP_LABELS)
+    STEP_DURATION = TOTAL_DURATION / STEP_COUNT  # ~1.25s per step
+
+    for i, label in enumerate(STEP_LABELS, start=1):
+        _jobs[job_id]["progress"] = {"step": i, "total": STEP_COUNT, "action": label}
+        logger.info(f"[{job_id}] Simulated progress {i}/{STEP_COUNT}: {label}")
+        await asyncio.sleep(STEP_DURATION)
+
+    # Mark complete with the cached result
+    _jobs[job_id] = {
+        "status": "complete",
+        "result": cached_result,
+        "progress": {"step": 8, "total": 8, "action": "Analysis complete!"},
+    }
+    logger.info(f"[{job_id}] Demo simulation complete.")
 
 
 # ---------------------------------------------------------------------------

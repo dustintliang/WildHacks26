@@ -1,0 +1,800 @@
+{
+  "job_id": "test-job-1d5058eb",
+  "status": "complete",
+  "output_mask_path": "C:\\Users\\philo\\Documents\\School\\Spring 2026\\Wildhacks\\WildHacks26\\backend\\output\\test-job-1d5058eb\\test-job-1d5058eb_vessel_mask.nii.gz",
+  "arteries": {
+    "left_ICA": {
+      "visible": true,
+      "stenosis_candidates": [],
+      "aneurysm_candidates": [],
+      "tortuosity": {
+        "distance_factor": 1.553,
+        "soam": 1.1129,
+        "flagged": true
+      },
+      "small_vessel_disease": {
+        "deep_wm_density": 7.3e-05,
+        "basal_ganglia_density": 0.018435,
+        "cortical_density": 0.001031,
+        "svd_ratio": 0.071,
+        "small_vessel_count": 0,
+        "svd_flag": true
+      }
+    },
+    "right_ICA": {
+      "visible": true,
+      "stenosis_candidates": [
+        {
+          "artery_name": "right_ICA",
+          "voxel_coordinates": [
+            229.0,
+            226.0,
+            12.0
+          ],
+          "mni_coordinates": [
+            5.690189791552257,
+            0.7346496473765001,
+            -5.296388069167733
+          ],
+          "stenosis_percent": 75.0,
+          "severity": "severe",
+          "affected_segment_length_mm": 8.2,
+          "r_min": 0.5,
+          "r_reference": 2.0
+        }
+      ],
+      "aneurysm_candidates": [
+        {
+          "artery_name": "right_ICA",
+          "bifurcation_voxel_coords": [
+            232.0,
+            225.0,
+            11.0
+          ],
+          "mni_coords": [
+            4.181945040210849,
+            0.17957682069391012,
+            -5.705156903713942
+          ],
+          "size_ratio": 0.78,
+          "aspect_ratio": 3.85,
+          "deviation_score": 0.72,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "right_ICA",
+          "bifurcation_voxel_coords": [
+            232.0,
+            226.0,
+            12.0
+          ],
+          "mni_coords": [
+            4.190404904715251,
+            0.7377805365249515,
+            -5.271178729832172
+          ],
+          "size_ratio": 0.78,
+          "aspect_ratio": 3.6,
+          "deviation_score": 0.72,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "right_ICA",
+          "bifurcation_voxel_coords": [
+            233.0,
+            225.0,
+            11.0
+          ],
+          "mni_coords": [
+            3.6820167445985135,
+            0.18062045041006058,
+            -5.696753790602088
+          ],
+          "size_ratio": 0.78,
+          "aspect_ratio": 3.71,
+          "deviation_score": 0.72,
+          "confidence": "moderate"
+        }
+      ],
+      "tortuosity": {
+        "distance_factor": 2.615,
+        "soam": 0.5793,
+        "flagged": true
+      },
+      "small_vessel_disease": {
+        "deep_wm_density": 7.3e-05,
+        "basal_ganglia_density": 0.018435,
+        "cortical_density": 0.001031,
+        "svd_ratio": 0.071,
+        "small_vessel_count": 0,
+        "svd_flag": true
+      }
+    },
+    "left_MCA": {
+      "visible": true,
+      "stenosis_candidates": [
+        {
+          "artery_name": "left_MCA",
+          "voxel_coordinates": [
+            310.0,
+            264.0,
+            62.0
+          ],
+          "mni_coordinates": [
+            -34.38091527787037,
+            22.775798483984545,
+            17.828151647001505
+          ],
+          "stenosis_percent": 32.7,
+          "severity": "normal",
+          "affected_segment_length_mm": 58.0,
+          "r_min": 0.5,
+          "r_reference": 0.742
+        }
+      ],
+      "aneurysm_candidates": [
+        {
+          "artery_name": "left_MCA",
+          "bifurcation_voxel_coords": [
+            295.0,
+            262.0,
+            64.0
+          ],
+          "mni_coords": [
+            -26.865039898024406,
+            21.8920278159203,
+            18.818387584760785
+          ],
+          "size_ratio": 1.58,
+          "aspect_ratio": 2.58,
+          "deviation_score": 0.58,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "left_MCA",
+          "bifurcation_voxel_coords": [
+            328.0,
+            261.0,
+            84.0
+          ],
+          "mni_coords": [
+            -43.19331247571972,
+            22.671792729757726,
+            29.078966800123453
+          ],
+          "size_ratio": 1.0,
+          "aspect_ratio": 3.21,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "left_MCA",
+          "bifurcation_voxel_coords": [
+            328.0,
+            262.0,
+            83.0
+          ],
+          "mni_coords": [
+            -43.20178794855019,
+            23.10585084091872,
+            28.52082548290491
+          ],
+          "size_ratio": 1.0,
+          "aspect_ratio": 3.61,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "left_MCA",
+          "bifurcation_voxel_coords": [
+            329.0,
+            262.0,
+            84.0
+          ],
+          "mni_coords": [
+            -43.69324857549509,
+            23.168967272969894,
+            29.02528834156692
+          ],
+          "size_ratio": 1.0,
+          "aspect_ratio": 3.22,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        }
+      ],
+      "tortuosity": {
+        "distance_factor": 4.473,
+        "soam": 0.5254,
+        "flagged": true
+      },
+      "small_vessel_disease": {
+        "deep_wm_density": 7.3e-05,
+        "basal_ganglia_density": 0.018435,
+        "cortical_density": 0.001031,
+        "svd_ratio": 0.071,
+        "small_vessel_count": 0,
+        "svd_flag": true
+      }
+    },
+    "right_MCA": {
+      "visible": true,
+      "stenosis_candidates": [
+        {
+          "artery_name": "right_MCA",
+          "voxel_coordinates": [
+            156.0,
+            245.0,
+            74.0
+          ],
+          "mni_coordinates": [
+            42.70980254953611,
+            13.933465779293329,
+            23.66633903607726
+          ],
+          "stenosis_percent": 29.3,
+          "severity": "normal",
+          "affected_segment_length_mm": 58.0,
+          "r_min": 0.5,
+          "r_reference": 0.707
+        }
+      ],
+      "aneurysm_candidates": [
+        {
+          "artery_name": "right_MCA",
+          "bifurcation_voxel_coords": [
+            154.0,
+            248.0,
+            72.0
+          ],
+          "mni_coords": [
+            43.69270039093681,
+            15.295625655679032,
+            22.471168603748083
+          ],
+          "size_ratio": 1.22,
+          "aspect_ratio": 1.98,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "right_MCA",
+          "bifurcation_voxel_coords": [
+            154.0,
+            251.0,
+            74.0
+          ],
+          "mni_coords": [
+            43.70961231578258,
+            16.908164000837132,
+            23.277043379843235
+          ],
+          "size_ratio": 1.22,
+          "aspect_ratio": 2.55,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "right_MCA",
+          "bifurcation_voxel_coords": [
+            155.0,
+            249.0,
+            72.0
+          ],
+          "mni_coords": [
+            43.19276429116144,
+            15.7928001988912,
+            22.41749014519155
+          ],
+          "size_ratio": 1.22,
+          "aspect_ratio": 2.46,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "right_MCA",
+          "bifurcation_voxel_coords": [
+            160.0,
+            253.0,
+            68.0
+          ],
+          "mni_coords": [
+            40.65922092177789,
+            17.534250792115927,
+            20.22694044187665
+          ],
+          "size_ratio": 1.22,
+          "aspect_ratio": 4.14,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "right_MCA",
+          "bifurcation_voxel_coords": [
+            164.0,
+            258.0,
+            65.0
+          ],
+          "mni_coords": [
+            38.634065712511074,
+            19.832861471455544,
+            18.461965799331665
+          ],
+          "size_ratio": 1.22,
+          "aspect_ratio": 4.14,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "right_MCA",
+          "bifurcation_voxel_coords": [
+            165.0,
+            259.0,
+            65.0
+          ],
+          "mni_coords": [
+            38.134129612735705,
+            20.330036014667712,
+            18.408287340775132
+          ],
+          "size_ratio": 1.22,
+          "aspect_ratio": 4.03,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "right_MCA",
+          "bifurcation_voxel_coords": [
+            168.0,
+            261.0,
+            63.0
+          ],
+          "mni_coords": [
+            36.61739378023776,
+            21.20128312613815,
+            17.31721404567361
+          ],
+          "size_ratio": 1.22,
+          "aspect_ratio": 3.85,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        }
+      ],
+      "tortuosity": {
+        "distance_factor": 9.578,
+        "soam": 0.8001,
+        "flagged": true
+      },
+      "small_vessel_disease": {
+        "deep_wm_density": 7.3e-05,
+        "basal_ganglia_density": 0.018435,
+        "cortical_density": 0.001031,
+        "svd_ratio": 0.071,
+        "small_vessel_count": 0,
+        "svd_flag": true
+      }
+    },
+    "left_ACA": {
+      "visible": true,
+      "stenosis_candidates": [
+        {
+          "artery_name": "left_ACA",
+          "voxel_coordinates": [
+            259.0,
+            251.0,
+            67.0
+          ],
+          "mni_coordinates": [
+            -8.842132404184667,
+            16.583235504687764,
+            20.686952037736773
+          ],
+          "stenosis_percent": 47.6,
+          "severity": "normal",
+          "affected_segment_length_mm": 102.5,
+          "r_min": 0.5,
+          "r_reference": 0.954
+        }
+      ],
+      "aneurysm_candidates": [
+        {
+          "artery_name": "left_ACA",
+          "bifurcation_voxel_coords": [
+            244.0,
+            271.0,
+            65.0
+          ],
+          "mni_coords": [
+            -1.3602993905951735,
+            26.366053724195808,
+            18.32715441659093
+          ],
+          "size_ratio": 1.0,
+          "aspect_ratio": 4.16,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "left_ACA",
+          "bifurcation_voxel_coords": [
+            244.0,
+            273.0,
+            65.0
+          ],
+          "mni_coords": [
+            -1.3603149989212397,
+            27.358315551187843,
+            18.202991273254156
+          ],
+          "size_ratio": 1.0,
+          "aspect_ratio": 4.49,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "left_ACA",
+          "bifurcation_voxel_coords": [
+            263.0,
+            251.0,
+            65.0
+          ],
+          "mni_coords": [
+            -10.85878092396888,
+            16.463264418882318,
+            19.728444999083877
+          ],
+          "size_ratio": 1.41,
+          "aspect_ratio": 2.72,
+          "deviation_score": 0.41,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "left_ACA",
+          "bifurcation_voxel_coords": [
+            265.0,
+            249.0,
+            61.0
+          ],
+          "mni_coords": [
+            -11.892492581537226,
+            15.224798641982488,
+            17.885175386443734
+          ],
+          "size_ratio": 1.73,
+          "aspect_ratio": 2.5,
+          "deviation_score": 0.73,
+          "confidence": "high"
+        },
+        {
+          "artery_name": "left_ACA",
+          "bifurcation_voxel_coords": [
+            265.0,
+            249.0,
+            62.0
+          ],
+          "mni_coords": [
+            -11.88402491286979,
+            15.286871444317512,
+            18.38123513199389
+          ],
+          "size_ratio": 1.58,
+          "aspect_ratio": 2.66,
+          "deviation_score": 0.58,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "left_ACA",
+          "bifurcation_voxel_coords": [
+            266.0,
+            250.0,
+            62.0
+          ],
+          "mni_coords": [
+            -12.383961012645159,
+            15.78404598752968,
+            18.327556673437357
+          ],
+          "size_ratio": 1.58,
+          "aspect_ratio": 2.69,
+          "deviation_score": 0.58,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "left_ACA",
+          "bifurcation_voxel_coords": [
+            266.0,
+            253.0,
+            65.0
+          ],
+          "mni_coords": [
+            -12.358581419131951,
+            17.458657135022804,
+            19.629491195082664
+          ],
+          "size_ratio": 1.22,
+          "aspect_ratio": 2.63,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "left_ACA",
+          "bifurcation_voxel_coords": [
+            267.0,
+            252.0,
+            64.0
+          ],
+          "mni_coords": [
+            -12.86696957924869,
+            16.901497048907913,
+            19.20391613431275
+          ],
+          "size_ratio": 1.41,
+          "aspect_ratio": 2.76,
+          "deviation_score": 0.41,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "left_ACA",
+          "bifurcation_voxel_coords": [
+            267.0,
+            253.0,
+            65.0
+          ],
+          "mni_coords": [
+            -12.858509714744287,
+            17.459700764738955,
+            19.637894308194518
+          ],
+          "size_ratio": 1.22,
+          "aspect_ratio": 2.45,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        }
+      ],
+      "tortuosity": {
+        "distance_factor": 8.069,
+        "soam": 0.5639,
+        "flagged": true
+      },
+      "small_vessel_disease": {
+        "deep_wm_density": 7.3e-05,
+        "basal_ganglia_density": 0.018435,
+        "cortical_density": 0.001031,
+        "svd_ratio": 0.071,
+        "small_vessel_count": 0,
+        "svd_flag": true
+      }
+    },
+    "right_ACA": {
+      "visible": true,
+      "stenosis_candidates": [
+        {
+          "artery_name": "right_ACA",
+          "voxel_coordinates": [
+            231.0,
+            260.0,
+            65.0
+          ],
+          "mni_coordinates": [
+            5.138854298158549,
+            20.89504648942966,
+            18.900811234489083
+          ],
+          "stenosis_percent": 36.4,
+          "severity": "normal",
+          "affected_segment_length_mm": 55.6,
+          "r_min": 0.5,
+          "r_reference": 0.787
+        }
+      ],
+      "aneurysm_candidates": [
+        {
+          "artery_name": "right_ACA",
+          "bifurcation_voxel_coords": [
+            244.0,
+            271.0,
+            65.0
+          ],
+          "mni_coords": [
+            -1.3602993905951735,
+            26.366053724195808,
+            18.32715441659093
+          ],
+          "size_ratio": 1.22,
+          "aspect_ratio": 1.83,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        },
+        {
+          "artery_name": "right_ACA",
+          "bifurcation_voxel_coords": [
+            244.0,
+            273.0,
+            65.0
+          ],
+          "mni_coords": [
+            -1.3603149989212397,
+            27.358315551187843,
+            18.202991273254156
+          ],
+          "size_ratio": 1.22,
+          "aspect_ratio": 2.17,
+          "deviation_score": 0.29,
+          "confidence": "moderate"
+        }
+      ],
+      "tortuosity": {
+        "distance_factor": 3.348,
+        "soam": 0.4441,
+        "flagged": true
+      },
+      "small_vessel_disease": {
+        "deep_wm_density": 7.3e-05,
+        "basal_ganglia_density": 0.018435,
+        "cortical_density": 0.001031,
+        "svd_ratio": 0.071,
+        "small_vessel_count": 0,
+        "svd_flag": true
+      }
+    },
+    "left_PCA": {
+      "visible": false,
+      "stenosis_candidates": [],
+      "aneurysm_candidates": [],
+      "tortuosity": {
+        "distance_factor": 1.0,
+        "soam": 0.0,
+        "flagged": false
+      },
+      "small_vessel_disease": {
+        "deep_wm_density": 7.3e-05,
+        "basal_ganglia_density": 0.018435,
+        "cortical_density": 0.001031,
+        "svd_ratio": 0.071,
+        "small_vessel_count": 0,
+        "svd_flag": true
+      }
+    },
+    "right_PCA": {
+      "visible": false,
+      "stenosis_candidates": [],
+      "aneurysm_candidates": [],
+      "tortuosity": {
+        "distance_factor": 1.0,
+        "soam": 0.0,
+        "flagged": false
+      },
+      "small_vessel_disease": {
+        "deep_wm_density": 7.3e-05,
+        "basal_ganglia_density": 0.018435,
+        "cortical_density": 0.001031,
+        "svd_ratio": 0.071,
+        "small_vessel_count": 0,
+        "svd_flag": true
+      }
+    },
+    "basilar": {
+      "visible": false,
+      "stenosis_candidates": [],
+      "aneurysm_candidates": [],
+      "tortuosity": {
+        "distance_factor": 1.0,
+        "soam": 0.0,
+        "flagged": false
+      },
+      "small_vessel_disease": {
+        "deep_wm_density": 7.3e-05,
+        "basal_ganglia_density": 0.018435,
+        "cortical_density": 0.001031,
+        "svd_ratio": 0.071,
+        "small_vessel_count": 0,
+        "svd_flag": true
+      }
+    },
+    "left_vertebral": {
+      "visible": false,
+      "stenosis_candidates": [],
+      "aneurysm_candidates": [],
+      "tortuosity": {
+        "distance_factor": 1.0,
+        "soam": 0.0,
+        "flagged": false
+      },
+      "small_vessel_disease": {
+        "deep_wm_density": 7.3e-05,
+        "basal_ganglia_density": 0.018435,
+        "cortical_density": 0.001031,
+        "svd_ratio": 0.071,
+        "small_vessel_count": 0,
+        "svd_flag": true
+      }
+    },
+    "right_vertebral": {
+      "visible": false,
+      "stenosis_candidates": [],
+      "aneurysm_candidates": [],
+      "tortuosity": {
+        "distance_factor": 1.0,
+        "soam": 0.0,
+        "flagged": false
+      },
+      "small_vessel_disease": {
+        "deep_wm_density": 7.3e-05,
+        "basal_ganglia_density": 0.018435,
+        "cortical_density": 0.001031,
+        "svd_ratio": 0.071,
+        "small_vessel_count": 0,
+        "svd_flag": true
+      }
+    }
+  },
+  "risk_scores": {
+    "large_vessel_stroke": {
+      "score": 84.5,
+      "severity": "high",
+      "drivers": [
+        "Stenosis: 75.0% in right_ICA",
+        "Tortuosity: DF=9.58 in right_MCA",
+        "Aneurysm candidate: high confidence in left_ACA"
+      ]
+    },
+    "lacunar_stroke": {
+      "score": 50.1,
+      "severity": "moderate",
+      "drivers": [
+        "SVD ratio: 0.071 (below 0.4 threshold)"
+      ]
+    },
+    "aneurysm_rupture": {
+      "score": 49.6,
+      "severity": "moderate",
+      "drivers": [
+        "Size ratio: 1.73 in left_ACA",
+        "Aspect ratio: 2.50",
+        "Confidence: high",
+        "Patient age: 60"
+      ]
+    }
+  },
+  "gemini_report": {
+    "structured_json": {},
+    "narrative_summary": "Gemini report generation failed: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods."
+  },
+  "slice_images": {
+    "left_ICA": {
+      "axial": "C:\\Users\\philo\\Documents\\School\\Spring 2026\\Wildhacks\\WildHacks26\\backend\\output\\test-job-1d5058eb\\test-job-1d5058eb_left_ICA_axial.png",
+      "coronal": "C:\\Users\\philo\\Documents\\School\\Spring 2026\\Wildhacks\\WildHacks26\\backend\\output\\test-job-1d5058eb\\test-job-1d5058eb_left_ICA_coronal.png"
+    },
+    "right_ICA": {
+      "axial": "C:\\Users\\philo\\Documents\\School\\Spring 2026\\Wildhacks\\WildHacks26\\backend\\output\\test-job-1d5058eb\\test-job-1d5058eb_right_ICA_axial.png",
+      "coronal": "C:\\Users\\philo\\Documents\\School\\Spring 2026\\Wildhacks\\WildHacks26\\backend\\output\\test-job-1d5058eb\\test-job-1d5058eb_right_ICA_coronal.png"
+    },
+    "left_MCA": {
+      "axial": "C:\\Users\\philo\\Documents\\School\\Spring 2026\\Wildhacks\\WildHacks26\\backend\\output\\test-job-1d5058eb\\test-job-1d5058eb_left_MCA_axial.png",
+      "coronal": "C:\\Users\\philo\\Documents\\School\\Spring 2026\\Wildhacks\\WildHacks26\\backend\\output\\test-job-1d5058eb\\test-job-1d5058eb_left_MCA_coronal.png"
+    },
+    "right_MCA": {
+      "axial": "C:\\Users\\philo\\Documents\\School\\Spring 2026\\Wildhacks\\WildHacks26\\backend\\output\\test-job-1d5058eb\\test-job-1d5058eb_right_MCA_axial.png",
+      "coronal": "C:\\Users\\philo\\Documents\\School\\Spring 2026\\Wildhacks\\WildHacks26\\backend\\output\\test-job-1d5058eb\\test-job-1d5058eb_right_MCA_coronal.png"
+    },
+    "left_ACA": {
+      "axial": "C:\\Users\\philo\\Documents\\School\\Spring 2026\\Wildhacks\\WildHacks26\\backend\\output\\test-job-1d5058eb\\test-job-1d5058eb_left_ACA_axial.png",
+      "coronal": "C:\\Users\\philo\\Documents\\School\\Spring 2026\\Wildhacks\\WildHacks26\\backend\\output\\test-job-1d5058eb\\test-job-1d5058eb_left_ACA_coronal.png"
+    },
+    "right_ACA": {
+      "axial": "C:\\Users\\philo\\Documents\\School\\Spring 2026\\Wildhacks\\WildHacks26\\backend\\output\\test-job-1d5058eb\\test-job-1d5058eb_right_ACA_axial.png",
+      "coronal": "C:\\Users\\philo\\Documents\\School\\Spring 2026\\Wildhacks\\WildHacks26\\backend\\output\\test-job-1d5058eb\\test-job-1d5058eb_right_ACA_coronal.png"
+    }
+  },
+  "warnings": [
+    "No GPU detected. Pipeline running on CPU \u2014 this will be slower.",
+    "HD-BET not installed; attempting FSL BET fallback.",
+    "FSL BET not installed either.",
+    "Neither HD-BET nor FSL BET available; using basic intensity thresholding for brain extraction. Results may be less accurate.",
+    "VesselBoost not available; using Otsu threshold + morphological cleanup as fallback. Segmentation quality may be reduced, especially for small vessels.",
+    "eICAB not available; using atlas-based heuristic labeling in MNI space. Artery labels are approximate and may be less accurate.",
+    "VMTK not available; using skimage skeletonize + distance transform for centerline extraction.",
+    "Gemini API call failed: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods."
+  ],
+  "step_errors": {},
+  "disclaimer": "This output is generated by a research pipeline and does not constitute clinical diagnosis."
+}
