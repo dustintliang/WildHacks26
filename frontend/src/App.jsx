@@ -29,6 +29,17 @@ export default function App() {
     try {
       let res
       if (isDemo) {
+        // Fetch the demo NIfTI for the viewer while we start the analysis
+        try {
+          const niftiRes = await fetch(`${API_BASE}/demo-nifti`)
+          if (niftiRes.ok) {
+            const blob = await niftiRes.blob()
+            const demoFile = new File([blob], '1.nii', { type: 'application/octet-stream' })
+            setOriginalFile(demoFile)
+          }
+        } catch {
+          // Viewer will just be empty if this fails
+        }
         res = await fetch(`${API_BASE}/analyze/demo`, { method: 'POST' })
       } else {
         const formData = new FormData()
@@ -44,11 +55,11 @@ export default function App() {
       const initialData = await res.json()
       const jobId = initialData.job_id
 
-      // Poll GET /analyze/{job_id} until complete
+      // Poll GET /results/{job_id} until complete
       let data
       while (true) {
         await new Promise(resolve => setTimeout(resolve, 2000))
-        const pollRes = await fetch(`${API_BASE}/analyze/${jobId}`)
+        const pollRes = await fetch(`${API_BASE}/results/${jobId}`)
         if (!pollRes.ok) throw new Error(`Polling failed: ${pollRes.status}`)
         data = await pollRes.json()
 

@@ -300,6 +300,28 @@ async def get_results(job_id: str):
 
 
 # ---------------------------------------------------------------------------
+# GET /render/{job_id} — return overlay URL for the vessel mask
+# ---------------------------------------------------------------------------
+@app.get("/render/{job_id}", tags=["Analysis"])
+async def get_render(job_id: str):
+    """
+    Return the overlay URL for the vessel mask NIfTI so the viewer
+    can display the segmentation as a colored overlay.
+    """
+    job_dir = OUTPUT_DIR / job_id
+    if not job_dir.exists():
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
+
+    # Find the vessel mask file in the output directory
+    mask_files = list(job_dir.glob("*vessel_mask*"))
+    if not mask_files:
+        raise HTTPException(status_code=404, detail="No vessel mask found for this job.")
+
+    mask_filename = mask_files[0].name
+    return {"overlay_url": f"/output/{job_id}/{mask_filename}"}
+
+
+# ---------------------------------------------------------------------------
 # Simulated demo progress (10 seconds, 8 steps)
 # ---------------------------------------------------------------------------
 async def _simulate_demo_progress(job_id: str, cached_result: dict):
