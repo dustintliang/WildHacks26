@@ -14,7 +14,7 @@ from pathlib import Path
 import nibabel as nib
 import numpy as np
 from scipy import ndimage
-from skimage.morphology import skeletonize_3d
+from skimage.morphology import skeletonize
 
 from app.config import (
     ANEURYSM_ASPECT_RATIO,
@@ -214,7 +214,7 @@ def detect_aneurysms(
     results: dict[str, list[AneurysmCandidate]] = {}
 
     # Find branch points in the full vessel skeleton
-    full_skeleton = skeletonize_3d((mask_data > 0).astype(np.uint8))
+    full_skeleton = skeletonize((mask_data > 0).astype(np.uint8))
     branch_points = _find_branch_points(full_skeleton)
 
     logger.info(f"  Found {len(branch_points)} bifurcation points.")
@@ -613,7 +613,7 @@ def _count_small_vessels(
         return 0
 
     # Skeletonize
-    skeleton = skeletonize_3d(roi_vessels.astype(np.uint8))
+    skeleton = skeletonize(roi_vessels.astype(np.uint8))
 
     # Distance transform for radii
     voxel_size = tuple(float(v) for v in nib.affines.voxel_sizes(affine))

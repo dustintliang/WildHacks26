@@ -217,10 +217,10 @@ def _skeletonize_centerline(
     Returns:
         Tuple of (ordered centerline points (N×3), radii (N,)).
     """
-    from skimage.morphology import skeletonize_3d
+    from skimage.morphology import skeletonize
 
     # Skeletonize the artery mask
-    skeleton = skeletonize_3d(artery_mask.astype(np.uint8))
+    skeleton = skeletonize(artery_mask.astype(np.uint8))
     skeleton_points = np.argwhere(skeleton > 0)
 
     if skeleton_points.shape[0] == 0:

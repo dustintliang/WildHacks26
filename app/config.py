@@ -151,7 +151,7 @@ POSTERIOR_CIRCULATION: set[str] = {
 # ---------------------------------------------------------------------------
 # Gemini model configuration
 # ---------------------------------------------------------------------------
-GEMINI_MODEL: str = "gemini-1.5-pro"
+GEMINI_MODEL: str = "gemini-1.5-pro-latest"
 GEMINI_SYSTEM_PROMPT: str = (
     "You are a neuroradiology analysis assistant. You will receive MRI vessel "
     "overlay images and structured feature data extracted from a cerebrovascular "
