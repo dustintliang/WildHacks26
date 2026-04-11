@@ -10,7 +10,9 @@ export default function App() {
   const [phase, setPhase] = useState('upload')
   const [originalFile, setOriginalFile] = useState(null)
   const [maskedBlob, setMaskedBlob] = useState(null)
-  const [analysis, setAnalysis] = useState('')
+  const [segments, setSegments] = useState({})
+  const [riskScores, setRiskScores] = useState({})
+  const [narrativeSummary, setNarrativeSummary] = useState('')
   const [error, setError] = useState(null)
   const [progress, setProgress] = useState({ step: 0, total: 8, action: 'Starting...' })
 
@@ -18,13 +20,14 @@ export default function App() {
     setError(null)
     setOriginalFile(file)
     setMaskedBlob(null)
-    setAnalysis('')
+    setSegments({})
+    setRiskScores({})
+    setNarrativeSummary('')
     setProgress({ step: 0, total: 8, action: 'Connecting to server...' })
     setPhase('processing')
 
     try {
       let res
-
       if (isDemo) {
         res = await fetch(`${API_BASE}/analyze/demo`, { method: 'POST' })
       } else {
@@ -41,11 +44,11 @@ export default function App() {
       const initialData = await res.json()
       const jobId = initialData.job_id
 
-      // Poll until complete, updating progress bar on every tick
+      // Poll GET /analyze/{job_id} until complete
       let data
       while (true) {
         await new Promise(resolve => setTimeout(resolve, 2000))
-        const pollRes = await fetch(`${API_BASE}/results/${jobId}`)
+        const pollRes = await fetch(`${API_BASE}/analyze/${jobId}`)
         if (!pollRes.ok) throw new Error(`Polling failed: ${pollRes.status}`)
         data = await pollRes.json()
 
@@ -62,18 +65,24 @@ export default function App() {
 
       setProgress({ step: 8, total: 8, action: 'Analysis complete!' })
 
-      let blob = null
-      if (data.output_mask_path) {
-        const parts = data.output_mask_path.split(/[\/\\]/)
-        const filename = parts.pop()
-        const jobFolder = parts.pop()
-        const r = await fetch(`${API_BASE}/output/${jobFolder}/${filename}`)
-        if (r.ok) blob = await r.blob()
+      setSegments(data.binary_segments ?? {})
+      setRiskScores(data.risk_scores ?? {})
+      setNarrativeSummary(data.narrative_summary ?? '')
+
+      // Fetch severity-coded overlay NIfTI from /render/{job_id} for NiiVue
+      try {
+        const renderRes = await fetch(`${API_BASE}/render/${jobId}`)
+        if (renderRes.ok) {
+          const renderData = await renderRes.json()
+          if (renderData.overlay_url) {
+            const r = await fetch(`${API_BASE}${renderData.overlay_url}`)
+            if (r.ok) setMaskedBlob(await r.blob())
+          }
+        }
+      } catch {
+        // Overlay is optional — viewer still works without it
       }
 
-      setMaskedBlob(blob)
-      const narrative = data?.gemini_report?.narrative_summary || 'AI narrative not available.'
-      setAnalysis(narrative)
       setPhase('results')
     } catch (e) {
       console.error(e)
@@ -86,7 +95,9 @@ export default function App() {
     setPhase('upload')
     setOriginalFile(null)
     setMaskedBlob(null)
-    setAnalysis('')
+    setSegments({})
+    setRiskScores({})
+    setNarrativeSummary('')
     setError(null)
     setProgress({ step: 0, total: 8, action: 'Starting...' })
   }
@@ -110,7 +121,12 @@ export default function App() {
               {phase === 'processing' ? (
                 <ProcessingPanel progress={progress} />
               ) : (
-                <AnalysisPanel analysis={analysis} onReset={reset} />
+                <AnalysisPanel
+                  segments={segments}
+                  riskScores={riskScores}
+                  narrativeSummary={narrativeSummary}
+                  onReset={reset}
+                />
               )}
             </div>
           </div>
@@ -137,16 +153,12 @@ function ProcessingPanel({ progress }) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="px-5 py-4 border-b border-gray-800 shrink-0">
         <h2 className="text-sm font-semibold text-white">Analyzing Scan</h2>
         <p className="text-xs text-gray-500 mt-0.5">Cerebrovascular pipeline running...</p>
       </div>
 
-      {/* Progress section */}
       <div className="flex-1 px-5 py-6 flex flex-col gap-6">
-
-        {/* Big percentage display */}
         <div className="text-center">
           <span className="text-5xl font-bold tabular-nums" style={{
             background: 'linear-gradient(90deg, #22d3ee, #818cf8)',
@@ -160,7 +172,6 @@ function ProcessingPanel({ progress }) {
           </p>
         </div>
 
-        {/* Progress bar track */}
         <div className="relative h-3 bg-gray-800 rounded-full overflow-hidden">
           <div
             className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
@@ -170,7 +181,6 @@ function ProcessingPanel({ progress }) {
               boxShadow: '0 0 12px rgba(99, 102, 241, 0.6)',
             }}
           />
-          {/* Animated shimmer overlay */}
           <div
             className="absolute inset-y-0 left-0 rounded-full pointer-events-none"
             style={{
@@ -181,7 +191,6 @@ function ProcessingPanel({ progress }) {
           />
         </div>
 
-        {/* 8-step grid */}
         <div className="grid grid-cols-4 gap-1.5">
           {STEP_LABELS.map((label, i) => {
             const stepNum = i + 1
@@ -214,7 +223,6 @@ function ProcessingPanel({ progress }) {
         </div>
       </div>
 
-      {/* Footer */}
       <div className="px-5 py-4 border-t border-gray-800 shrink-0">
         <p className="text-xs text-gray-600 leading-relaxed">
           CPU mode: ~4–5 min. The NIfTI viewer renders the original scan while the model runs.
