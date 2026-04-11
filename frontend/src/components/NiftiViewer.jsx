@@ -6,7 +6,7 @@ const SLICE_VIEWS = [
   { label: 'Coronal', value: 1 },
   { label: 'Sagittal', value: 2 },
   { label: 'Multi', value: 3 },
-  { label: '3D Render', value: 4 },
+  { label: '3D', value: 4 },
 ]
 
 const MASK_COLORMAPS = [
@@ -23,6 +23,9 @@ export default function NiftiViewer({ originalFile, maskedBlob }) {
   const [maskOpacity, setMaskOpacity] = useState(0.6)
   const [initialized, setInitialized] = useState(false)
   const [loadError, setLoadError] = useState(null)
+  const [clipDepth, setClipDepth] = useState(-1)
+
+  const is3D = sliceType === 4
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -40,9 +43,7 @@ export default function NiftiViewer({ originalFile, maskedBlob }) {
     nvRef.current = nv
     setInitialized(true)
 
-    return () => {
-      nvRef.current = null
-    }
+    return () => { nvRef.current = null }
   }, [])
 
   useEffect(() => {
@@ -52,41 +53,24 @@ export default function NiftiViewer({ originalFile, maskedBlob }) {
     const nv = nvRef.current
     const objectUrls = []
 
-    const buildVolumes = () => {
-      const vols = []
+    const volumes = []
 
-      if (originalFile) {
-        const url = URL.createObjectURL(originalFile)
-        objectUrls.push(url)
-        vols.push({
-          url,
-          colormap: 'gray',
-          opacity: 1,
-        })
-      }
-
-      if (maskedBlob) {
-        const url = URL.createObjectURL(maskedBlob)
-        objectUrls.push(url)
-        vols.push({
-          url,
-          colormap: maskColormap,
-          opacity: maskOpacity,
-          cal_min: 0.1,
-          cal_max: 1,
-        })
-      }
-
-      return vols
+    if (originalFile) {
+      const url = URL.createObjectURL(originalFile)
+      objectUrls.push(url)
+      volumes.push({ url, name: originalFile.name, colormap: 'gray', opacity: 1 })
     }
 
-    const volumes = buildVolumes()
+    if (maskedBlob) {
+      const url = URL.createObjectURL(maskedBlob)
+      objectUrls.push(url)
+      volumes.push({ url, name: 'mask.nii.gz', colormap: maskColormap, opacity: maskOpacity, cal_min: 0.1, cal_max: 1 })
+    }
+
     if (volumes.length === 0) return
 
     nv.loadVolumes(volumes)
-      .then(() => {
-        objectUrls.forEach((u) => URL.revokeObjectURL(u))
-      })
+      .then(() => { objectUrls.forEach((u) => URL.revokeObjectURL(u)) })
       .catch((e) => {
         objectUrls.forEach((u) => URL.revokeObjectURL(u))
         setLoadError(e?.message ?? 'Failed to load NIFTI file')
@@ -94,15 +78,24 @@ export default function NiftiViewer({ originalFile, maskedBlob }) {
   }, [initialized, originalFile, maskedBlob, maskColormap, maskOpacity])
 
   useEffect(() => {
-    if (!nvRef.current) return
-    nvRef.current.setSliceType(sliceType)
+    const nv = nvRef.current
+    if (!nv) return
+    nv.setSliceType(sliceType)
+    if (sliceType === 4) {
+      nv.setVolumeRenderIllumination(0.6)
+    }
   }, [sliceType])
+
+  useEffect(() => {
+    const nv = nvRef.current
+    if (!nv || !is3D) return
+    nv.setClipPlane([clipDepth === -1 ? 2 : clipDepth, 270, 0])
+  }, [clipDepth, is3D])
 
   return (
     <div className="flex flex-col h-full bg-black">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-gray-900 border-b border-gray-800 shrink-0">
-        {/* Slice view buttons */}
         <div className="flex gap-1">
           {SLICE_VIEWS.map((v) => (
             <button
@@ -119,49 +112,68 @@ export default function NiftiViewer({ originalFile, maskedBlob }) {
           ))}
         </div>
 
-        <div className="w-px h-4 bg-gray-700 mx-1" />
+        {!is3D && (
+          <>
+            <div className="w-px h-4 bg-gray-700 mx-1" />
+            <label className="text-xs text-gray-500">Overlay:</label>
+            <select
+              value={maskColormap}
+              onChange={(e) => setMaskColormap(e.target.value)}
+              className="text-xs bg-gray-800 text-gray-300 rounded px-2 py-1 border border-gray-700"
+            >
+              {MASK_COLORMAPS.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+            <label className="text-xs text-gray-500">Opacity:</label>
+            <input
+              type="range" min={0} max={1} step={0.05} value={maskOpacity}
+              onChange={(e) => setMaskOpacity(Number(e.target.value))}
+              className="w-20 accent-cyan-500"
+            />
+            <span className="text-xs text-gray-500 w-6">{Math.round(maskOpacity * 100)}%</span>
+          </>
+        )}
 
-        {/* Mask colormap */}
-        <label className="text-xs text-gray-500">Overlay:</label>
-        <select
-          value={maskColormap}
-          onChange={(e) => setMaskColormap(e.target.value)}
-          className="text-xs bg-gray-800 text-gray-300 rounded px-2 py-1 border border-gray-700"
-        >
-          {MASK_COLORMAPS.map((c) => (
-            <option key={c.value} value={c.value}>{c.label}</option>
-          ))}
-        </select>
-
-        {/* Opacity slider */}
-        <label className="text-xs text-gray-500">Opacity:</label>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.05}
-          value={maskOpacity}
-          onChange={(e) => setMaskOpacity(Number(e.target.value))}
-          className="w-20 accent-cyan-500"
-        />
-        <span className="text-xs text-gray-500 w-6">{Math.round(maskOpacity * 100)}%</span>
-      </div>
-
-      {/* Legend */}
-      <div className="flex gap-4 px-3 py-1.5 bg-gray-950 border-b border-gray-800 shrink-0">
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm bg-gray-400" />
-          <span className="text-xs text-gray-500">Original MRI</span>
-        </div>
-        {maskedBlob && (
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-sm bg-orange-500" />
-            <span className="text-xs text-gray-500">Lesion Mask</span>
-          </div>
+        {is3D && (
+          <>
+            <div className="w-px h-4 bg-gray-700 mx-1" />
+            <label className="text-xs text-gray-500">Clip plane:</label>
+            <input
+              type="range" min={-1} max={1} step={0.01} value={clipDepth}
+              onChange={(e) => setClipDepth(Number(e.target.value))}
+              className="w-28 accent-cyan-500"
+            />
+            <button
+              onClick={() => setClipDepth(-1)}
+              className="px-2 py-1 text-xs rounded bg-gray-800 text-gray-400 hover:bg-gray-700"
+            >
+              Reset
+            </button>
+            <div className="ml-auto text-xs text-gray-600 hidden sm:block">
+              Click + drag to rotate · Scroll to zoom
+            </div>
+          </>
         )}
       </div>
 
-      {/* Canvas area */}
+      {/* Legend */}
+      {!is3D && (
+        <div className="flex gap-4 px-3 py-1.5 bg-gray-950 border-b border-gray-800 shrink-0">
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-sm bg-gray-400" />
+            <span className="text-xs text-gray-500">Original MRI</span>
+          </div>
+          {maskedBlob && (
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm bg-orange-500" />
+              <span className="text-xs text-gray-500">Lesion Mask</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Canvas */}
       <div className="flex-1 relative min-h-0">
         <canvas ref={canvasRef} className="absolute inset-0" />
         {loadError && (
