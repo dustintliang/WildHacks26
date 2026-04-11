@@ -1,0 +1,229 @@
+"""
+main.py — FastAPI application for cerebrovascular arterial analysis.
+
+Provides three endpoints:
+    GET  /health             — Service health check
+    POST /analyze            — Upload NIfTI, start analysis, return job ID
+    GET  /results/{job_id}   — Retrieve analysis results or status
+"""
+
+import asyncio
+import logging
+import shutil
+import uuid
+from contextlib import asynccontextmanager
+from pathlib import Path
+
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
+
+from app.config import OUTPUT_DIR, TEMP_DIR
+from app.utils.gpu_check import check_gpu
+
+# ---------------------------------------------------------------------------
+# Logging configuration
+# ---------------------------------------------------------------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("cerebrovascular")
+
+# ---------------------------------------------------------------------------
+# In-memory job store
+# ---------------------------------------------------------------------------
+# Maps job_id → {"status": "processing"|"complete"|"failed", "result": dict|None}
+_jobs: dict[str, dict] = {}
+
+
+# ---------------------------------------------------------------------------
+# Application lifespan
+# ---------------------------------------------------------------------------
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup and shutdown events."""
+    # Startup
+    logger.info("=" * 60)
+    logger.info("Cerebrovascular Arterial Analysis Backend — Starting")
+    logger.info("=" * 60)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    TEMP_DIR.mkdir(parents=True, exist_ok=True)
+    gpu = check_gpu()
+    logger.info(f"GPU available: {gpu}")
+    logger.info(f"Output directory: {OUTPUT_DIR}")
+    logger.info(f"Temp directory:   {TEMP_DIR}")
+    logger.info("Ready to accept requests.")
+    yield
+    # Shutdown
+    logger.info("Shutting down.")
+
+
+# ---------------------------------------------------------------------------
+# FastAPI app
+# ---------------------------------------------------------------------------
+app = FastAPI(
+    title="Cerebrovascular Arterial Analysis API",
+    description=(
+        "REST API for automated cerebrovascular arterial blood vessel analysis. "
+        "Accepts raw NIfTI TOF-MRA files and returns structured findings "
+        "including stenosis, aneurysm candidates, tortuosity metrics, "
+        "small vessel disease proxy, risk scores, and an AI-generated report."
+    ),
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+
+# ---------------------------------------------------------------------------
+# GET /health
+# ---------------------------------------------------------------------------
+@app.get("/health", tags=["Status"])
+async def health_check():
+    """
+    Service health check.
+
+    Returns the service status and GPU availability.
+    """
+    gpu_available = check_gpu()
+    return {
+        "status": "healthy",
+        "gpu_available": gpu_available,
+    }
+
+
+# ---------------------------------------------------------------------------
+# POST /analyze
+# ---------------------------------------------------------------------------
+@app.post("/analyze", tags=["Analysis"])
+async def analyze(file: UploadFile = File(...)):
+    """
+    Upload a NIfTI TOF-MRA file and start the analysis pipeline.
+
+    Accepts .nii or .nii.gz files via multipart upload.
+    Returns a job_id that can be used to poll for results.
+    """
+    # Validate file extension
+    filename = file.filename or "upload.nii.gz"
+    if not (filename.endswith(".nii") or filename.endswith(".nii.gz")):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Invalid file format: '{filename}'. "
+                "Only .nii and .nii.gz files are accepted."
+            ),
+        )
+
+    # Generate job ID
+    job_id = str(uuid.uuid4())
+    logger.info(f"New analysis job: {job_id} — File: {filename}")
+
+    # Save uploaded file to temp directory
+    temp_path = TEMP_DIR / f"{job_id}_{filename}"
+    try:
+        with open(temp_path, "wb") as f:
+            content = await file.read()
+            f.write(content)
+        logger.info(f"Uploaded file saved: {temp_path} ({len(content):,} bytes)")
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save uploaded file: {exc}",
+        )
+
+    # Initialize job status
+    _jobs[job_id] = {
+        "status": "processing",
+        "result": None,
+    }
+
+    # Launch pipeline in background
+    asyncio.create_task(_run_pipeline_async(job_id, str(temp_path)))
+
+    return JSONResponse(
+        status_code=202,
+        content={
+            "job_id": job_id,
+            "status": "processing",
+            "message": (
+                f"Analysis started for '{filename}'. "
+                f"Poll GET /results/{job_id} for results."
+            ),
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# GET /results/{job_id}
+# ---------------------------------------------------------------------------
+@app.get("/results/{job_id}", tags=["Analysis"])
+async def get_results(job_id: str):
+    """
+    Retrieve analysis results for a given job.
+
+    Returns the full JSON result when processing is complete,
+    or a status string if still processing or failed.
+    """
+    if job_id not in _jobs:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Job '{job_id}' not found.",
+        )
+
+    job = _jobs[job_id]
+
+    if job["status"] == "processing":
+        return JSONResponse(
+            status_code=200,
+            content={
+                "job_id": job_id,
+                "status": "processing",
+                "message": "Analysis is still running. Please try again later.",
+            },
+        )
+    elif job["status"] == "failed":
+        return JSONResponse(
+            status_code=200,
+            content={
+                "job_id": job_id,
+                "status": "failed",
+                "message": job.get("error", "Pipeline failed with unknown error."),
+            },
+        )
+    else:
+        # Complete
+        return JSONResponse(
+            status_code=200,
+            content=job["result"],
+        )
+
+
+# ---------------------------------------------------------------------------
+# Background pipeline runner
+# ---------------------------------------------------------------------------
+async def _run_pipeline_async(job_id: str, input_path: str):
+    """Run the pipeline in a background thread."""
+    try:
+        from app.pipeline.orchestrator import run_pipeline
+        result = await asyncio.to_thread(run_pipeline, job_id, input_path)
+        _jobs[job_id] = {
+            "status": "complete",
+            "result": result,
+        }
+        logger.info(f"Job {job_id} completed successfully.")
+    except Exception as exc:
+        logger.error(f"Job {job_id} failed: {exc}", exc_info=True)
+        _jobs[job_id] = {
+            "status": "failed",
+            "result": None,
+            "error": str(exc),
+        }
+    finally:
+        # Clean up temp file
+        temp_path = Path(input_path)
+        if temp_path.exists():
+            try:
+                temp_path.unlink()
+                logger.info(f"Cleaned up temp file: {temp_path}")
+            except Exception:
+                pass

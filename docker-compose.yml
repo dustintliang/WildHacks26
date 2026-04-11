@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  cerebrovascular-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cerebrovascular-analysis
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # Persist output files on host
+      - ./output:/app/output
+      # Mount input data (optional)
+      - ./dataset:/app/dataset:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
