@@ -10,6 +10,7 @@ Labels: L/R ICA, L/R MCA, L/R ACA, L/R PCA, basilar, L/R vertebral.
 """
 
 import logging
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -70,6 +71,13 @@ _ARTERY_MNI_REGIONS: dict[str, dict] = {
 }
 
 
+_EICAB_LOCAL_REQUIRED_COMMANDS = (
+    "3dAutobox",
+    "antsRegistration",
+    "antsApplyTransforms",
+)
+
+
 def label_arteries(
     vessel_mask_path: str | Path,
     original_path: str | Path,
@@ -97,17 +105,17 @@ def label_arteries(
 
     labeled_path = output_dir / f"{job_id}_labeled.nii.gz"
 
-    # --- Try eICAB ---
-    success = _try_eicab(vessel_mask_path, original_path, labeled_path)
-    if success:
-        logger.info("eICAB labeling completed successfully.")
-        artery_dict = _extract_artery_dict_from_labeled(labeled_path)
-        return str(labeled_path), artery_dict, warnings
-
-    # --- Try eICAB via Docker ---
+    # --- Prefer eICAB via Docker ---
     success = _try_eicab_docker(vessel_mask_path, original_path, output_dir, labeled_path)
     if success:
         logger.info("eICAB (Docker) labeling completed successfully.")
+        artery_dict = _extract_artery_dict_from_labeled(labeled_path)
+        return str(labeled_path), artery_dict, warnings
+
+    # --- Fallback to local eICAB ---
+    success = _try_eicab(vessel_mask_path, original_path, labeled_path)
+    if success:
+        logger.info("eICAB labeling completed successfully.")
         artery_dict = _extract_artery_dict_from_labeled(labeled_path)
         return str(labeled_path), artery_dict, warnings
 
@@ -129,25 +137,71 @@ def _try_eicab(
     output_path: str | Path,
 ) -> bool:
     """Try running eICAB locally."""
-    eicab_script = EICAB_DIR / "run_eicab.py"
-    if not eicab_script.exists():
-        logger.info(f"eICAB not found at {EICAB_DIR}")
+    eicab_script = EICAB_DIR / "scripts" / "express_cw.py"
+    template_dir = EICAB_DIR / "MNI"
+    model_dir = EICAB_DIR / "weights" / "labels_18_236"
+
+    required_paths = [eicab_script, template_dir, model_dir]
+    if not all(path.exists() for path in required_paths):
+        logger.info(f"eICAB assets not found under {EICAB_DIR}")
+        return False
+
+    missing_commands = [
+        command for command in _EICAB_LOCAL_REQUIRED_COMMANDS
+        if shutil.which(command) is None
+    ]
+    if missing_commands:
+        logger.warning(
+            "eICAB local prerequisites missing: %s. "
+            "Install AFNI/ANTs or use Docker for eICAB.",
+            ", ".join(missing_commands),
+        )
         return False
 
     try:
         import sys
+        output_path = Path(output_path)
+        run_output_dir = output_path.parent / f"{output_path.stem}_eicab"
+        run_output_dir.mkdir(parents=True, exist_ok=True)
+        prefix = output_path.name.replace(".nii.gz", "").replace(".nii", "")
+
+        env = os.environ.copy()
+        project_root = Path(__file__).resolve().parents[2]
+        pythonpath_parts = [str(project_root), str(EICAB_DIR)]
+        if env.get("PYTHONPATH"):
+            pythonpath_parts.append(env["PYTHONPATH"])
+        env["PYTHONPATH"] = os.pathsep.join(pythonpath_parts)
+
         cmd = [
             sys.executable, str(eicab_script),
-            "--input", str(original_path),
-            "--mask", str(vessel_mask_path),
-            "--output", str(output_path),
+            str(original_path),
+            str(run_output_dir),
+            "-f",
+            "-t", str(template_dir),
+            "-mp", str(model_dir),
+            "-m", str(vessel_mask_path),
+            "-pp",
+            "--experimental_prediction",
+            "-vs", "labels_18_236",
+            "-p", prefix,
+            "-vv",
         ]
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=1200
+            cmd, capture_output=True, text=True, timeout=1200, env=env
         )
-        if result.returncode == 0 and Path(output_path).exists():
+
+        eicab_labeled_path = run_output_dir / f"{prefix}_eICAB_CW.nii.gz"
+        if result.returncode == 0 and eicab_labeled_path.exists():
+            shutil.copy2(eicab_labeled_path, output_path)
             return True
-        logger.warning(f"eICAB failed: {result.stderr[:500]}")
+
+        stderr = result.stderr.strip()
+        stdout = result.stdout.strip()
+        logger.warning("eICAB failed.")
+        if stdout:
+            logger.warning("eICAB stdout:\n%s", stdout)
+        if stderr:
+            logger.warning("eICAB stderr:\n%s", stderr)
         return False
     except Exception as exc:
         logger.warning(f"eICAB error: {exc}")
@@ -165,23 +219,34 @@ def _try_eicab_docker(
         return False
 
     try:
-        vessel_mask_path = Path(vessel_mask_path).resolve()
         original_path = Path(original_path).resolve()
         output_dir = Path(output_dir).resolve()
+        output_path = Path(output_path)
+        prefix = output_path.name.replace(".nii.gz", "").replace(".nii", "")
 
         cmd = [
             "docker", "run", "--rm",
-            "-v", f"{vessel_mask_path.parent}:/data",
+            "-v", f"{original_path.parent}:/data",
             "-v", f"{output_dir}:/output",
-            "eicab:latest",
-            "--input", f"/data/{original_path.name}",
-            "--mask", f"/data/{vessel_mask_path.name}",
-            "--output", f"/output/{Path(output_path).name}",
+            "felixdumais1/eicab",
+            "-t", f"/data/{original_path.name}",
+            "-o", "/output",
+            "-f",
         ]
         result = subprocess.run(
             cmd, capture_output=True, text=True, timeout=1200
         )
-        return result.returncode == 0 and Path(output_path).exists()
+        eicab_labeled_path = output_dir / f"{original_path.name.replace('.nii.gz', '').replace('.nii', '')}_eICAB_CW.nii.gz"
+        if result.returncode == 0 and eicab_labeled_path.exists():
+            shutil.copy2(eicab_labeled_path, output_path)
+            return True
+
+        logger.warning("eICAB Docker failed.")
+        if result.stdout.strip():
+            logger.warning("eICAB Docker stdout:\n%s", result.stdout.strip())
+        if result.stderr.strip():
+            logger.warning("eICAB Docker stderr:\n%s", result.stderr.strip())
+        return False
     except Exception as exc:
         logger.warning(f"eICAB Docker error: {exc}")
         return False
@@ -199,9 +264,11 @@ def _extract_artery_dict_from_labeled(
     img = load_nifti(labeled_path)
     data = get_data(img).astype(int)
 
+    grouped_labels = _group_eicab_labels()
     artery_dict: dict[str, np.ndarray | None] = {}
-    for label_id, artery_name in EICAB_LABEL_MAP.items():
-        voxels = np.argwhere(data == label_id)
+    for artery_name in ARTERY_NAMES:
+        label_ids = grouped_labels.get(artery_name, [])
+        voxels = np.argwhere(np.isin(data, label_ids)) if label_ids else np.empty((0, 3), dtype=int)
         if voxels.shape[0] > 0:
             artery_dict[artery_name] = voxels
             logger.info(f"  {artery_name}: {voxels.shape[0]:,} voxels")
@@ -209,12 +276,15 @@ def _extract_artery_dict_from_labeled(
             artery_dict[artery_name] = None
             logger.info(f"  {artery_name}: not visible")
 
-    # Mark any artery names not in the label map
-    for name in ARTERY_NAMES:
-        if name not in artery_dict:
-            artery_dict[name] = None
-
     return artery_dict
+
+
+def _group_eicab_labels() -> dict[str, list[int]]:
+    """Group one or more upstream label IDs under each pipeline artery name."""
+    grouped: dict[str, list[int]] = {}
+    for label_id, artery_name in EICAB_LABEL_MAP.items():
+        grouped.setdefault(artery_name, []).append(label_id)
+    return grouped
 
 
 def _atlas_based_labeling(
@@ -258,16 +328,19 @@ def _atlas_based_labeling(
     labeled_data = np.zeros(mask_data.shape, dtype=np.int16)
     artery_dict: dict[str, np.ndarray | None] = {}
 
-    # Assign labels using MNI coordinate ranges
-    # Process in reverse order of EICAB_LABEL_MAP so earlier labels
-    # (typically more important arteries) take priority
-    label_map_reversed = dict(reversed(list(EICAB_LABEL_MAP.items())))
+    # Assign labels using MNI coordinate ranges. We write one canonical label
+    # per artery name so the saved fallback NIfTI is stable across runs.
+    grouped_labels = _group_eicab_labels()
+    canonical_labels = {
+        artery_name: min(label_ids) for artery_name, label_ids in grouped_labels.items()
+    }
 
-    for label_id, artery_name in label_map_reversed.items():
+    for artery_name in reversed(ARTERY_NAMES):
         if artery_name not in _ARTERY_MNI_REGIONS:
             artery_dict[artery_name] = None
             continue
 
+        label_id = canonical_labels[artery_name]
         region = _ARTERY_MNI_REGIONS[artery_name]
         x_min, x_max = region["x_range"]
         y_min, y_max = region["y_range"]
