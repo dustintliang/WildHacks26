@@ -2,53 +2,114 @@ import { useState } from 'react'
 import Header from './components/Header'
 import UploadZone from './components/UploadZone'
 import NiftiViewer from './components/NiftiViewer'
+import Vessel3DViewer from './components/Vessel3DViewer'
 import AnalysisPanel from './components/AnalysisPanel'
 
 const API_BASE = 'http://127.0.0.1:8000'
+const DEMO_JOB_ID = '9acd632a-8937-4fdc-8e9b-d16d8387aa6d'
+const DEMO_OUTPUT_BASE = `/backend-output/${DEMO_JOB_ID}`
+const DEMO_ANALYZE_URL = '/backend-assets/final_example/analyze_response.json'
+
+const DEMO_STEPS = [
+  { step: 1, action: 'Loading preprocessed scan...' },
+  { step: 2, action: 'Applying vessel segmentation mask...' },
+  { step: 3, action: 'Loading artery labels...' },
+  { step: 4, action: 'Loading centerline data...' },
+  { step: 5, action: 'Computing vessel features...' },
+  { step: 6, action: 'Rendering labeled overlay...' },
+  { step: 7, action: 'Loading AI report...' },
+  { step: 8, action: 'Computing risk scores...' },
+]
+
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 
 export default function App() {
   const [phase, setPhase] = useState('upload')
   const [originalFile, setOriginalFile] = useState(null)
   const [maskedBlob, setMaskedBlob] = useState(null)
+  const [overlayMeta, setOverlayMeta] = useState(null)
+  const [analyzeResponse, setAnalyzeResponse] = useState(null)
   const [analysis, setAnalysis] = useState('')
   const [error, setError] = useState(null)
   const [progress, setProgress] = useState({ step: 0, total: 8, action: 'Starting...' })
   const [segments, setSegments] = useState({})
   const [riskScores, setRiskScores] = useState({})
   const [narrativeSummary, setNarrativeSummary] = useState('')
+  const [viewMode, setViewMode] = useState('mri') // 'mri' | 'vessel3d'
 
   const handleSubmit = async (file, isDemo = false) => {
     setError(null)
     setOriginalFile(file)
     setMaskedBlob(null)
+    setOverlayMeta(null)
+    setAnalyzeResponse(null)
     setAnalysis('')
     setSegments({})
     setRiskScores({})
     setNarrativeSummary('')
-    setProgress({ step: 0, total: 8, action: 'Connecting to server...' })
+    setProgress({ step: 0, total: 8, action: 'Loading demo data...' })
     setPhase('processing')
 
     try {
-      let res
-
       if (isDemo) {
-        // Fetch the demo NIfTI for the viewer while we start the analysis
-        try {
-          const niftiRes = await fetch(`${API_BASE}/demo-nifti`)
-          if (niftiRes.ok) {
-            const blob = await niftiRes.blob()
-            const demoFile = new File([blob], 'demo_scan.nii.gz', { type: 'application/octet-stream' })
-            setOriginalFile(demoFile)
-          }
-        } catch {
-          // Viewer will just be empty if this fails
+        // ── Demo mode: use real pipeline artifacts from backend/output ──────
+        const analyzePromise = fetch(DEMO_ANALYZE_URL).then(r => {
+          if (!r.ok) throw new Error(`Analyze fetch ${r.status}`)
+          return r.json()
+        })
+        const mriPromise = fetch('/backend-assets/1.nii')
+          .then(r => {
+            if (!r.ok) throw new Error(`MRI fetch ${r.status}`)
+            return r.blob()
+          })
+          .catch(e => {
+            console.warn('Demo MRI base load skipped:', e)
+            return null
+          })
+        const overlayPromise = fetch(`${DEMO_OUTPUT_BASE}/${DEMO_JOB_ID}_overlay.nii.gz`)
+          .then(r => {
+            if (!r.ok) throw new Error(`Overlay fetch ${r.status}`)
+            return r.blob()
+          })
+          .catch(e => {
+            console.warn('Demo vessel overlay load skipped:', e)
+            return null
+          })
+
+        const [analyzeData] = await Promise.all([
+          analyzePromise,
+        ])
+
+        for (const s of DEMO_STEPS) {
+          setProgress({ ...s, total: 8 })
+          await delay(350)
         }
-        res = await fetch(`${API_BASE}/analyze/demo`, { method: 'POST' })
-      } else {
-        const formData = new FormData()
-        formData.append('file', file)
-        res = await fetch(`${API_BASE}/analyze`, { method: 'POST', body: formData })
+
+        const [mriBlob, overlayBlob] = await Promise.all([mriPromise, overlayPromise])
+        setProgress({ step: 8, total: 8, action: 'Analysis complete!' })
+        await delay(300)
+
+        if (mriBlob && mriBlob.size > 0) {
+          const mriFile = new File([mriBlob], '1.nii', { type: 'application/octet-stream' })
+          setOriginalFile(mriFile)
+        }
+        setMaskedBlob(overlayBlob && overlayBlob.size > 0 ? overlayBlob : null)
+        setOverlayMeta(overlayBlob && overlayBlob.size > 0 ? { kind: 'binary_mask' } : null)
+        setAnalyzeResponse(analyzeData)
+        setSegments(analyzeData.binary_segments || {})
+        setRiskScores(analyzeData.risk_scores || {})
+        setNarrativeSummary(analyzeData.narrative_summary || '')
+        setAnalysis(analyzeData.narrative_summary || '')
+        setPhase('results')
+        return
       }
+
+      // ── Live mode: upload to backend and poll ────────────────────────────
+      setProgress({ step: 0, total: 8, action: 'Connecting to server...' })
+
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch(`${API_BASE}/analyze`, { method: 'POST', body: formData })
 
       if (!res.ok) {
         const text = await res.text()
@@ -58,10 +119,9 @@ export default function App() {
       const initialData = await res.json()
       const jobId = initialData.job_id
 
-      // Poll until complete, updating progress bar on every tick
       let data
       while (true) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await delay(1000)
         const pollRes = await fetch(`${API_BASE}/results/${jobId}`)
         if (!pollRes.ok) throw new Error(`Polling failed: ${pollRes.status}`)
         data = await pollRes.json()
@@ -82,6 +142,7 @@ export default function App() {
       const finalRes = await fetch(`${API_BASE}/analyze/${jobId}`)
       if (finalRes.ok) {
         const finalData = await finalRes.json()
+        setAnalyzeResponse(finalData)
         setSegments(finalData.binary_segments || {})
         setRiskScores(finalData.risk_scores || {})
         setNarrativeSummary(finalData.narrative_summary || '')
@@ -113,6 +174,8 @@ export default function App() {
     setPhase('upload')
     setOriginalFile(null)
     setMaskedBlob(null)
+    setOverlayMeta(null)
+    setAnalyzeResponse(null)
     setAnalysis('')
     setSegments({})
     setRiskScores({})
@@ -132,19 +195,75 @@ export default function App() {
 
         {(phase === 'processing' || phase === 'results') && (
           <div className="flex h-full">
-            <div className="flex-[3] min-w-0">
-              <NiftiViewer originalFile={originalFile} maskedBlob={maskedBlob} />
+            <div className="flex-[3] min-w-0 flex flex-col">
+              {/* View mode toggle bar */}
+              {phase === 'results' && (
+                <div className="flex items-center gap-1 px-3 py-2 bg-gray-900/90 border-b border-gray-800 shrink-0">
+                  <button
+                    onClick={() => setViewMode('mri')}
+                    className={`px-3 py-1.5 text-xs rounded-lg font-semibold transition-all ${
+                      viewMode === 'mri'
+                        ? 'bg-cyan-400 text-black shadow-lg shadow-cyan-500/30'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      MRI + Vessel Overlay
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('vessel3d')}
+                    className={`px-3 py-1.5 text-xs rounded-lg font-semibold transition-all ${
+                      viewMode === 'vessel3d'
+                        ? 'bg-indigo-400 text-black shadow-lg shadow-indigo-500/30'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+                      </svg>
+                      3D Vessel View
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {/* Viewer panels */}
+              <div className="flex-1 min-h-0">
+                {viewMode === 'mri' ? (
+                  <NiftiViewer
+                    originalFile={originalFile}
+                    maskedBlob={maskedBlob}
+                    overlayMeta={overlayMeta}
+                    analyzeResponse={analyzeResponse}
+                  />
+                ) : (
+                  <Vessel3DViewer
+                    analyzeResponse={analyzeResponse}
+                    renderMeta={
+                      analyzeResponse
+                        ? undefined
+                        : null
+                    }
+                  />
+                )}
+              </div>
             </div>
 
             <div className="flex-[2] min-w-0 border-l border-gray-800 overflow-y-auto">
               {phase === 'processing' ? (
                 <ProcessingPanel progress={progress} />
               ) : (
-                <AnalysisPanel 
+                <AnalysisPanel
                   segments={segments}
                   riskScores={riskScores}
                   narrativeSummary={narrativeSummary}
-                  onReset={reset} 
+                  onReset={reset}
                 />
               )}
             </div>
