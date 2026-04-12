@@ -53,6 +53,54 @@ function generateVesselBoostColormap() {
   return { R, G, B, A, min: 0, max: 1 }
 }
 
+/**
+ * Compute auto-contrast window using histogram-based percentiles.
+ * Ported from vesselboost-webapp/web/js/modules/ui/percentile.js
+ */
+function computeAutoWindow(img) {
+  const LOW_PCT = 0.02
+  const HIGH_PCT = 0.998
+  const N_BINS = 4096
+
+  if (!img || img.length === 0) return { low: 0, high: 1, min: 0, max: 1 }
+
+  let min = Infinity
+  let max = -Infinity
+  for (let i = 0; i < img.length; i++) {
+    const v = img[i]
+    if (v < min) min = v
+    if (v > max) max = v
+  }
+
+  if (!isFinite(min) || !isFinite(max)) return { low: 0, high: 1, min: 0, max: 1 }
+  if (max <= min) return { low: min, high: min + 1, min, max: min + 1 }
+
+  const bins = new Uint32Array(N_BINS)
+  const scale = (N_BINS - 1) / (max - min)
+  for (let i = 0; i < img.length; i++) {
+    bins[Math.round((img[i] - min) * scale)]++
+  }
+
+  const lowTarget = Math.floor(img.length * LOW_PCT)
+  const highTarget = Math.floor(img.length * HIGH_PCT)
+  let cumulative = 0
+  let low = min
+  let high = max
+
+  for (let i = 0; i < N_BINS; i++) {
+    cumulative += bins[i]
+    if (low === min && cumulative >= lowTarget) {
+      low = min + i / scale
+    }
+    if (cumulative >= highTarget) {
+      high = min + i / scale
+      break
+    }
+  }
+
+  return { low, high, min, max }
+}
+
 function buildArteryLabelLut(hiddenArteries) {
   const R = [0]
   const G = [0]
@@ -190,6 +238,9 @@ export default function NiftiViewer({
   const [volumesReady, setVolumesReady] = useState(0)
   const [activeArtery, setActiveArtery] = useState(null)
   const [hiddenArteries, setHiddenArteries] = useState(new Set())
+  const [windowMin, setWindowMin] = useState(0)
+  const [windowMax, setWindowMax] = useState(1)
+  const [globalRange, setGlobalRange] = useState([0, 1])
 
   const isLabeledOverlay = overlayMeta?.kind === 'artery_labels'
   const is3D = sliceType === 4
@@ -300,6 +351,104 @@ export default function NiftiViewer({
     return () => ro.disconnect()
   }, [drawLabelCanvas])
 
+  // ── Window/level control helpers (ported from vesselboost-webapp) ──
+
+  const syncWindowFromNv = useCallback(() => {
+    const nv = nvRef.current
+    if (!nv || !nv.volumes?.length) return
+    const vol = nv.volumes[0]
+    const gMin = vol.global_min ?? 0
+    const gMax = vol.global_max ?? 1
+    setGlobalRange([gMin, gMax])
+    setWindowMin(vol.cal_min ?? gMin)
+    setWindowMax(vol.cal_max ?? gMax)
+  }, [])
+
+  const pctMin = globalRange[1] > globalRange[0]
+    ? Math.max(0, Math.min(100, ((windowMin - globalRange[0]) / (globalRange[1] - globalRange[0])) * 100))
+    : 0
+  const pctMax = globalRange[1] > globalRange[0]
+    ? Math.max(0, Math.min(100, ((windowMax - globalRange[0]) / (globalRange[1] - globalRange[0])) * 100))
+    : 100
+
+  const handleSliderMin = useCallback((e) => {
+    const nv = nvRef.current
+    if (!nv || !nv.volumes?.length) return
+    const vol = nv.volumes[0]
+    const gMin = vol.global_min ?? 0
+    const gMax = vol.global_max ?? 1
+    const range = gMax - gMin || 1
+    const curMaxPct = Math.max(0, Math.min(100, ((vol.cal_max - gMin) / range) * 100))
+    let pct = Number(e.target.value)
+    if (pct > curMaxPct - 1) pct = curMaxPct - 1
+    const newMin = gMin + (pct / 100) * range
+    vol.cal_min = newMin
+    nv.updateGLVolume()
+    setWindowMin(newMin)
+  }, [])
+
+  const handleSliderMax = useCallback((e) => {
+    const nv = nvRef.current
+    if (!nv || !nv.volumes?.length) return
+    const vol = nv.volumes[0]
+    const gMin = vol.global_min ?? 0
+    const gMax = vol.global_max ?? 1
+    const range = gMax - gMin || 1
+    const curMinPct = Math.max(0, Math.min(100, ((vol.cal_min - gMin) / range) * 100))
+    let pct = Number(e.target.value)
+    if (pct < curMinPct + 1) pct = curMinPct + 1
+    const newMax = gMin + (pct / 100) * range
+    vol.cal_max = newMax
+    nv.updateGLVolume()
+    setWindowMax(newMax)
+  }, [])
+
+  const handleInputMin = useCallback((e) => {
+    const nv = nvRef.current
+    if (!nv || !nv.volumes?.length) return
+    const val = parseFloat(e.target.value)
+    if (isNaN(val)) return
+    const vol = nv.volumes[0]
+    vol.cal_min = val
+    nv.updateGLVolume()
+    setWindowMin(val)
+  }, [])
+
+  const handleInputMax = useCallback((e) => {
+    const nv = nvRef.current
+    if (!nv || !nv.volumes?.length) return
+    const val = parseFloat(e.target.value)
+    if (isNaN(val)) return
+    const vol = nv.volumes[0]
+    vol.cal_max = val
+    nv.updateGLVolume()
+    setWindowMax(val)
+  }, [])
+
+  const handleAutoContrast = useCallback(() => {
+    const nv = nvRef.current
+    if (!nv || !nv.volumes?.length) return
+    const vol = nv.volumes[0]
+    const { low, high, min: rawMin, max: rawMax } = computeAutoWindow(vol.img)
+
+    let scaledLow = low
+    let scaledHigh = high
+    const rawRange = rawMax - rawMin
+    const scaledRange = (vol.global_max ?? 1) - (vol.global_min ?? 0)
+    if (rawRange > 0 && scaledRange > 0) {
+      const slope = scaledRange / rawRange
+      const inter = (vol.global_min ?? 0) - rawMin * slope
+      scaledLow = low * slope + inter
+      scaledHigh = high * slope + inter
+    }
+
+    vol.cal_min = scaledLow
+    vol.cal_max = scaledHigh
+    nv.updateGLVolume()
+    setWindowMin(scaledLow)
+    setWindowMax(scaledHigh)
+  }, [])
+
   useEffect(() => {
     if (!initialized || !nvRef.current) return
 
@@ -371,6 +520,7 @@ export default function NiftiViewer({
         nv.updateGLVolume?.()
         nv.drawScene()
         drawLabelCanvas()
+        syncWindowFromNv()
         setVolumesReady(loadedCount)
       } catch (error) {
         if (loadRequestRef.current !== requestId) return
@@ -390,6 +540,7 @@ export default function NiftiViewer({
     mriOpacity,
     originalFile,
     sliceType,
+    syncWindowFromNv,
   ])
 
   useEffect(() => {
@@ -467,6 +618,70 @@ export default function NiftiViewer({
             </button>
           ))}
         </div>
+
+        <div className="w-px h-4 bg-gray-700 mx-1" />
+
+        {/* ── Window/Level dual-range slider (ported from vesselboost-webapp) ── */}
+        <input
+          type="number"
+          step="any"
+          value={Number(windowMin.toPrecision(4))}
+          onChange={handleInputMin}
+          title="Window minimum"
+          className="w-[68px] px-1 py-0.5 text-[11px] text-center bg-gray-800 border border-gray-700 rounded text-gray-300 focus:border-blue-500 focus:outline-none tabular-nums"
+          style={{ MozAppearance: 'textfield' }}
+        />
+        <div className="relative w-[120px] h-5 flex items-center shrink-0">
+          {/* Track background */}
+          <div className="absolute w-full h-1 bg-gray-700 rounded-full pointer-events-none" />
+          {/* Selected range highlight */}
+          <div
+            className="absolute h-1 rounded-full pointer-events-none"
+            style={{
+              left: `${pctMin}%`,
+              width: `${Math.max(0, pctMax - pctMin)}%`,
+              background: '#3b82f6',
+            }}
+          />
+          {/* Min slider */}
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={0.1}
+            value={pctMin}
+            onChange={handleSliderMin}
+            className="window-range-slider"
+            style={{ zIndex: 4 }}
+          />
+          {/* Max slider */}
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={0.1}
+            value={pctMax}
+            onChange={handleSliderMax}
+            className="window-range-slider"
+            style={{ zIndex: 3 }}
+          />
+        </div>
+        <input
+          type="number"
+          step="any"
+          value={Number(windowMax.toPrecision(4))}
+          onChange={handleInputMax}
+          title="Window maximum"
+          className="w-[68px] px-1 py-0.5 text-[11px] text-center bg-gray-800 border border-gray-700 rounded text-gray-300 focus:border-blue-500 focus:outline-none tabular-nums"
+          style={{ MozAppearance: 'textfield' }}
+        />
+        <button
+          onClick={handleAutoContrast}
+          title="Auto-contrast (percentile-based)"
+          className="px-2 py-0.5 text-[11px] rounded bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white border border-gray-700 font-medium"
+        >
+          Auto
+        </button>
 
         <div className="w-px h-4 bg-gray-700 mx-1" />
 
@@ -646,6 +861,56 @@ export default function NiftiViewer({
           </div>
         )}
       </div>
+
+      {/* Dual-range slider styles (ported from vesselboost-webapp) */}
+      <style>{`
+        .window-range-slider {
+          position: absolute;
+          width: 100%;
+          height: 20px;
+          -webkit-appearance: none;
+          appearance: none;
+          background: transparent;
+          pointer-events: none;
+          margin: 0;
+        }
+        .window-range-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 14px;
+          height: 14px;
+          background: #3b82f6;
+          border-radius: 50%;
+          cursor: pointer;
+          pointer-events: auto;
+          border: 2px solid white;
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+          position: relative;
+          z-index: 10;
+        }
+        .window-range-slider::-moz-range-thumb {
+          width: 14px;
+          height: 14px;
+          background: #3b82f6;
+          border-radius: 50%;
+          cursor: pointer;
+          pointer-events: auto;
+          border: 2px solid white;
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+        }
+        .window-range-slider::-webkit-slider-runnable-track {
+          background: transparent;
+        }
+        .window-range-slider::-moz-range-track {
+          background: transparent;
+        }
+        /* Hide number input spinners */
+        input[type="number"].tabular-nums::-webkit-outer-spin-button,
+        input[type="number"].tabular-nums::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+      `}</style>
     </div>
   )
 }
