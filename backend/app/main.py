@@ -180,7 +180,7 @@ async def analyze_demo():
     If a cached result exists, simulates a 10-second progressive pipeline
     so the progress bar animates through all 8 steps.
     """
-    demo_path = Path("../dataset/1.nii").resolve()
+    demo_path = (Path(__file__).parent.parent.parent / "dataset" / "1.nii").resolve()
     if not demo_path.exists():
         raise HTTPException(
             status_code=404,
@@ -248,7 +248,7 @@ async def analyze_demo():
 @app.get("/demo-nifti", tags=["Analysis"])
 async def get_demo_nifti():
     """Return the raw demo 1.nii file for immediate viewer loading."""
-    demo_path = Path("../dataset/1.nii").resolve()
+    demo_path = (Path(__file__).parent.parent.parent / "dataset" / "1.nii").resolve()
     if not demo_path.exists():
         raise HTTPException(status_code=404, detail="Demo dataset not found.")
     return FileResponse(str(demo_path), media_type="application/octet-stream", filename="1.nii")
@@ -297,6 +297,28 @@ async def get_results(job_id: str):
             status_code=200,
             content=job["result"],
         )
+
+
+# ---------------------------------------------------------------------------
+# GET /render/{job_id} — return overlay URL for the vessel mask
+# ---------------------------------------------------------------------------
+@app.get("/render/{job_id}", tags=["Analysis"])
+async def get_render(job_id: str):
+    """
+    Return the overlay URL for the vessel mask NIfTI so the viewer
+    can display the segmentation as a colored overlay.
+    """
+    job_dir = OUTPUT_DIR / job_id
+    if not job_dir.exists():
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
+
+    # Find the vessel mask file in the output directory
+    mask_files = list(job_dir.glob("*vessel_mask*"))
+    if not mask_files:
+        raise HTTPException(status_code=404, detail="No vessel mask found for this job.")
+
+    mask_filename = mask_files[0].name
+    return {"overlay_url": f"/output/{job_id}/{mask_filename}"}
 
 
 # ---------------------------------------------------------------------------
