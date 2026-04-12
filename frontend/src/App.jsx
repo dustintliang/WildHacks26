@@ -36,7 +36,6 @@ export default function App() {
   const [riskScores, setRiskScores] = useState({})
   const [narrativeSummary, setNarrativeSummary] = useState('')
   const [viewMode, setViewMode] = useState('mri') // 'mri' | 'vessel3d'
-
   const handleSubmit = async (file, isDemo = false) => {
     setError(null)
     setOriginalFile(file)
@@ -47,7 +46,8 @@ export default function App() {
     setSegments({})
     setRiskScores({})
     setNarrativeSummary('')
-    setProgress({ step: 0, total: 8, action: 'Loading demo data...' })
+    setOverlayMeta(null)
+    setProgress({ step: 0, total: 8, action: isDemo ? 'Loading demo data...' : 'Connecting to server...' })
     setPhase('processing')
 
     try {
@@ -153,7 +153,10 @@ export default function App() {
           const renderData = await renderRes.json()
           if (renderData.overlay_url) {
             const r = await fetch(`${API_BASE}${renderData.overlay_url}`)
-            if (r.ok) setMaskedBlob(await r.blob())
+            if (r.ok) {
+              setMaskedBlob(await r.blob())
+              setOverlayMeta({ kind: 'artery_labels' }) // The backend provides labeled overlays
+            }
           }
         }
       } catch (e) {
@@ -177,6 +180,7 @@ export default function App() {
     setSegments({})
     setRiskScores({})
     setNarrativeSummary('')
+    setOverlayMeta(null)
     setError(null)
     setProgress({ step: 0, total: 8, action: 'Starting...' })
   }
@@ -230,7 +234,6 @@ export default function App() {
                 </div>
               )}
 
-              {/* Viewer panels */}
               <div className="flex-1 min-h-0">
                 {viewMode === 'mri' ? (
                   <NiftiViewer
