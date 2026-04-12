@@ -29,7 +29,9 @@ function serveNiftiPlugin() {
 
   const resolveBackendFile = (prefix, rootDir, url) => {
     if (!url.startsWith(prefix)) return null
-    const relativePath = decodeURIComponent(url.slice(prefix.length))
+    // Strip query strings (e.g. ?t=123) and hashes (#...)
+    const cleanUrl = url.split(/[?#]/)[0]
+    const relativePath = decodeURIComponent(cleanUrl.slice(prefix.length))
     return path.join(rootDir, relativePath)
   }
 
@@ -40,8 +42,9 @@ function serveNiftiPlugin() {
         return
       }
 
-      if (req.url.endsWith('.nii.gz')) {
-        const filePath = path.join(publicDir, req.url)
+      const cleanUrl = req.url.split(/[?#]/)[0]
+      if (cleanUrl.endsWith('.nii.gz')) {
+        const filePath = path.join(publicDir, cleanUrl)
         if (fs.existsSync(filePath)) {
           serveFile(res, filePath)
           return

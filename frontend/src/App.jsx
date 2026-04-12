@@ -54,7 +54,7 @@ export default function App() {
     try {
       if (isDemo) {
         // ── Demo mode: use real pipeline artifacts from backend/output ──────
-        const analyzePromise = fetch(DEMO_ANALYZE_URL).then(r => {
+        const analyzePromise = fetch(`${DEMO_ANALYZE_URL}?t=${Date.now()}`).then(r => {
           if (!r.ok) throw new Error(`Analyze fetch ${r.status}`)
           return r.json()
         })
@@ -140,15 +140,12 @@ export default function App() {
 
       setProgress({ step: 8, total: 8, action: 'Analysis complete!' })
 
-      const finalRes = await fetch(`${API_BASE}/analyze/${jobId}`)
-      if (finalRes.ok) {
-        const finalData = await finalRes.json()
-        setAnalyzeResponse(finalData)
-        setSegments(finalData.binary_segments || {})
-        setRiskScores(finalData.risk_scores || {})
-        setNarrativeSummary(finalData.narrative_summary || '')
-        setAnalysis(finalData.narrative_summary || '')
-      }
+      // Use the data retrieved from the final poll instead of doing a second fetch
+      setAnalyzeResponse(data)
+      setSegments(data.binary_segments || {})
+      setRiskScores(data.risk_scores || {})
+      setNarrativeSummary(data.narrative_summary || '')
+      setAnalysis(data.narrative_summary || '')
 
       // Fetch severity-coded overlay NIfTI from /render/{job_id} for NiiVue
       try {

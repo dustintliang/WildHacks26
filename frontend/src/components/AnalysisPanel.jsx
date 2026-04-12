@@ -83,65 +83,47 @@ function SummaryTab({ text, segments, riskScores }) {
 
   return (
     <div className="space-y-4">
-      {!isFallback ? (
+      {text && text.trim().length > 0 ? (
         parseMarkdown(text).length > 0
           ? parseMarkdown(text).map((s, i) => <NarrativeSection key={i} {...s} />)
           : <PlainText text={text} />
       ) : (
-        <>
-          {highRisks.length > 0 && (
-            <div className="rounded-xl border border-red-900/50 bg-red-950/20 px-4 py-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-red-400 mb-2">High Risk Findings</h3>
-              <ul className="space-y-1.5">
-                {highRisks.map(([key, r]) => (
-                  <li key={key} className="text-sm text-gray-200 leading-relaxed">
-                    <span className="text-red-400 font-medium">{key.replace(/_/g, ' ')}</span>
-                    {' '}— score {Math.round(r.score)}/100
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+        <div className="rounded-xl border border-gray-800 bg-gray-900/40 px-4 py-3">
+          <p className="text-sm text-gray-400 italic">No narrative AI summary was generated for this scan.</p>
+        </div>
+      )}
 
-          <div className="rounded-xl border border-gray-700 bg-gray-900/50 px-4 py-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Vessels Analyzed</h3>
-            <p className="text-sm text-gray-200 leading-relaxed">
-              {visibleArteries.length} of {arteryEntries.length} vessels visible.
-              {' '}{visibleArteries.map(([n]) => n.replace(/_/g, ' ')).join(', ')}.
-            </p>
-          </div>
+      <div className="rounded-xl border border-gray-700 bg-gray-900/50 px-4 py-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Vessels Analyzed</h3>
+        <p className="text-sm text-gray-200 leading-relaxed">
+          {visibleArteries.length} of {arteryEntries.length} vessels visible.
+          {' '}{visibleArteries.map(([n]) => n.replace(/_/g, ' ')).join(', ')}.
+        </p>
+      </div>
 
-          {allFindings.length > 0 ? (
-            <div className="rounded-xl border border-yellow-900/50 bg-yellow-950/20 px-4 py-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-yellow-400 mb-2">Detected Findings</h3>
-              <ul className="space-y-1.5">
-                {allFindings.map((f, i) => (
-                  <li key={i} className="text-sm text-gray-300 leading-relaxed">
-                    {f.type === 'stenosis' && (
-                      <><span className="text-yellow-400 font-medium">{f.artery.replace(/_/g, ' ')}</span>: stenosis {f.stenosis_percent?.toFixed(1)}% ({f.severity})</>
-                    )}
-                    {f.type === 'aneurysm' && (
-                      <><span className="text-orange-400 font-medium">{f.artery.replace(/_/g, ' ')}</span>: aneurysm candidate — size ratio {f.size_ratio?.toFixed(2)}, aspect {f.aspect_ratio?.toFixed(2)}, {f.confidence ?? 'unknown'} confidence</>
-                    )}
-                    {f.type === 'tortuosity' && (
-                      <><span className="text-cyan-400 font-medium">{f.artery.replace(/_/g, ' ')}</span>: elevated tortuosity (DF={f.distance_factor?.toFixed(2)})</>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <div className="rounded-xl border border-gray-800 bg-gray-900/40 px-4 py-3">
-              <p className="text-sm text-gray-400">No significant findings detected in visible vessels.</p>
-            </div>
-          )}
-
-          <div className="rounded-xl border border-gray-800 bg-gray-900/30 px-3 py-2.5">
-            <p className="text-xs text-gray-600 italic">
-              Narrative AI summary unavailable — configure a Gemini API key for full reports.
-            </p>
-          </div>
-        </>
+      {allFindings.length > 0 ? (
+        <div className="rounded-xl border border-yellow-900/50 bg-yellow-950/20 px-4 py-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-yellow-400 mb-2">Detected Findings</h3>
+          <ul className="space-y-1.5">
+            {allFindings.map((f, i) => (
+              <li key={i} className="text-sm text-gray-300 leading-relaxed">
+                {f.type === 'stenosis' && (
+                  <><span className="text-yellow-400 font-medium">{f.artery.replace(/_/g, ' ')}</span>: stenosis {f.stenosis_percent?.toFixed(1)}% ({f.severity})</>
+                )}
+                {f.type === 'aneurysm' && (
+                  <><span className="text-orange-400 font-medium">{f.artery.replace(/_/g, ' ')}</span>: aneurysm candidate — size ratio {f.size_ratio?.toFixed(2)}, aspect {f.aspect_ratio?.toFixed(2)}, {f.confidence ?? 'unknown'} confidence</>
+                )}
+                {f.type === 'tortuosity' && (
+                  <><span className="text-cyan-400 font-medium">{f.artery.replace(/_/g, ' ')}</span>: elevated tortuosity (DF={f.distance_factor?.toFixed(2)})</>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-gray-800 bg-gray-900/40 px-4 py-3">
+          <p className="text-sm text-gray-400">No significant findings detected in visible vessels.</p>
+        </div>
       )}
     </div>
   )
