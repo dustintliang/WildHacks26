@@ -47,7 +47,8 @@ export default function App() {
     setRiskScores({})
     setNarrativeSummary('')
     setOverlayMeta(null)
-    setProgress({ step: 0, total: 8, action: isDemo ? 'Loading demo data...' : 'Connecting to server...' })    setPhase('processing')
+    setProgress({ step: 0, total: 8, action: isDemo ? 'Loading demo data...' : 'Connecting to server...' })
+    setPhase('processing')
 
     try {
       if (isDemo) {
