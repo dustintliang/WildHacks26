@@ -125,7 +125,7 @@ export default function NiftiViewer({
       selectionBoxColor:   [1, 1, 1, 0.4],
       clipPlaneColor:      [0.6, 0, 0.8, 0.5],
       isColorbar:          false,
-      dragMode:            nv?.dragModes?.contrast ?? 1,
+      dragMode:            1,
     })
     nv.attachToCanvas(canvas)
     nvRef.current = nv
