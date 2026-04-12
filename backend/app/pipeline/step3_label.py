@@ -77,6 +77,9 @@ _EICAB_LOCAL_REQUIRED_COMMANDS = (
     "antsApplyTransforms",
 )
 
+_AFNI_BIN_DIR = Path.home() / "abin"
+_ANTS_BIN_DIR = Path.home() / "miniforge3" / "envs" / "brain-ai" / "bin"
+
 
 def label_arteries(
     vessel_mask_path: str | Path,
@@ -146,9 +149,10 @@ def _try_eicab(
         logger.info(f"eICAB assets not found under {EICAB_DIR}")
         return False
 
+    env = _build_local_eicab_env()
     missing_commands = [
         command for command in _EICAB_LOCAL_REQUIRED_COMMANDS
-        if shutil.which(command) is None
+        if shutil.which(command, path=env.get("PATH")) is None
     ]
     if missing_commands:
         logger.warning(
@@ -164,13 +168,6 @@ def _try_eicab(
         run_output_dir = output_path.parent / f"{output_path.stem}_eicab"
         run_output_dir.mkdir(parents=True, exist_ok=True)
         prefix = output_path.name.replace(".nii.gz", "").replace(".nii", "")
-
-        env = os.environ.copy()
-        project_root = Path(__file__).resolve().parents[2]
-        pythonpath_parts = [str(project_root), str(EICAB_DIR)]
-        if env.get("PYTHONPATH"):
-            pythonpath_parts.append(env["PYTHONPATH"])
-        env["PYTHONPATH"] = os.pathsep.join(pythonpath_parts)
 
         cmd = [
             sys.executable, str(eicab_script),
@@ -206,6 +203,22 @@ def _try_eicab(
     except Exception as exc:
         logger.warning(f"eICAB error: {exc}")
         return False
+
+
+def _build_local_eicab_env() -> dict[str, str]:
+    """Build a subprocess environment with local AFNI/ANTs/eICAB paths."""
+    env = os.environ.copy()
+    project_root = Path(__file__).resolve().parents[2]
+    pythonpath_parts = [str(project_root), str(EICAB_DIR)]
+    if env.get("PYTHONPATH"):
+        pythonpath_parts.append(env["PYTHONPATH"])
+    env["PYTHONPATH"] = os.pathsep.join(pythonpath_parts)
+
+    path_parts = [str(_AFNI_BIN_DIR), str(_ANTS_BIN_DIR)]
+    if env.get("PATH"):
+        path_parts.append(env["PATH"])
+    env["PATH"] = os.pathsep.join(path_parts)
+    return env
 
 
 def _try_eicab_docker(
