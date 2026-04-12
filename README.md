@@ -8,6 +8,22 @@ Cerebrovascular disease remains the second leading cause of death globally, clai
 ## What it does:
 VascuSense is a cerebrovascular imaging analysis platform that transforms raw TOF-MRA neuroimaging data into a high-fidelity map of arterial health. By automating the segmentation and anatomical labeling of the Circle of Willis, the system performs a rigorous geometric analysis to detect critical structural risk features, including arterial stenosis, aneurysm candidates, tortuosity, and occlusions. Each detected anomaly is precisely scored and rendered in a detailed 3D environment, providing clinicians with an intuitive spatial understanding of where risks are located within the vessel tree. This analysis culminates in a generated clinical narrative that translates complex volumetric data into a concise summary of findings, ensuring that subtle warning signs are not only identified but effectively communicated for clinical decision-making.
 
+
+<img width="756" height="433" alt="3d-findings-map" src="https://github.com/user-attachments/assets/937d7da8-e0f0-445d-9825-4b4f4db5f31d" /><br />
+3D Map of Blood Vessels with Gemini AI Assistance
+<br /><br />
+<img width="756" height="429.5" alt="brain-cmri-demo-scan" src="https://github.com/user-attachments/assets/aff4883e-ad58-4e7e-9147-1dd077257cb9" /><br />
+Brain CMRI Demo Scan
+<br /><br />
+<img width="756" height="433" alt="mri-with-highlighted-affected-blood-vessels" src="https://github.com/user-attachments/assets/0294209f-0a33-4c0e-9c28-50e9847febfa" /><br />
+Brain CMRI Scan Highlighting Affected Blood Vessels
+<br /><br />
+<img width="756" height="433" alt="blood-vessels-risk-indicator" src="https://github.com/user-attachments/assets/5a295eee-0ee1-454a-be64-dd16787d75f1" /><br />
+Blood Vessels Risk Indicator
+<br /><br />
+<img width="756" height="433" alt="blood-vessels-label-and-detection" src="https://github.com/user-attachments/assets/645a587e-7848-448b-9969-4a515462040d" /><br />
+Blood Vessels Label and Detection
+<br /><br />
 ## How we built it:
 The VascuSense architecture initiates with taking in .NIfTI data and utilizes the VesselBoost library to execute N4 bias correction, denoising, and high precision segmentation. Once a binary mask is established, the system employs eICAB or atlas based labeling to categorize major arterial segments, which provides the anatomical context required for skeletonization and distance transforms. By calculating the distance to the nearest boundary at each voxel, the system determines the true radius throughout the vessel tree, transforming the data into a queryable graph where nodes represent branch points and edges carry anatomical labels. The platform then grades arterial stenosis via the NASCET method by calculating narrowing as a percentage relative to a healthy distal segment. It further quantifies tortuosity through both the Distance Factor, defined as the ratio of actual path length to Euclidean distance, and the Sum of Angles Metric, which measures the cumulative angular change along the vessel. To assess small vessel disease, the system maps the data into the Montreal Neurological Institute coordinate system to evaluate vessel density within standardized regions of interest as a diagnostic proxy. Ultimately, these clinical features are synthesized into visual axial and coronal overlays and a Gemini API generated analysis. Subsequently, the system outputs probabilities for large vessel stroke, lacunar events, and aneurysm rupture.
 
