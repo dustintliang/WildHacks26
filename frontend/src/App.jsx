@@ -16,6 +16,7 @@ export default function App() {
   const [segments, setSegments] = useState({})
   const [riskScores, setRiskScores] = useState({})
   const [narrativeSummary, setNarrativeSummary] = useState('')
+  const [overlayMeta, setOverlayMeta] = useState(null)
 
   const handleSubmit = async (file, isDemo = false) => {
     setError(null)
@@ -25,6 +26,7 @@ export default function App() {
     setSegments({})
     setRiskScores({})
     setNarrativeSummary('')
+    setOverlayMeta(null)
     setProgress({ step: 0, total: 8, action: 'Connecting to server...' })
     setPhase('processing')
 
@@ -95,7 +97,10 @@ export default function App() {
           const renderData = await renderRes.json()
           if (renderData.overlay_url) {
             const r = await fetch(`${API_BASE}${renderData.overlay_url}`)
-            if (r.ok) setMaskedBlob(await r.blob())
+            if (r.ok) {
+              setMaskedBlob(await r.blob())
+              setOverlayMeta({ kind: 'artery_labels' }) // The backend provides labeled overlays
+            }
           }
         }
       } catch (e) {
@@ -117,6 +122,7 @@ export default function App() {
     setSegments({})
     setRiskScores({})
     setNarrativeSummary('')
+    setOverlayMeta(null)
     setError(null)
     setProgress({ step: 0, total: 8, action: 'Starting...' })
   }
@@ -133,7 +139,7 @@ export default function App() {
         {(phase === 'processing' || phase === 'results') && (
           <div className="flex h-full">
             <div className="flex-[3] min-w-0">
-              <NiftiViewer originalFile={originalFile} maskedBlob={maskedBlob} />
+              <NiftiViewer originalFile={originalFile} maskedBlob={maskedBlob} overlayMeta={overlayMeta} />
             </div>
 
             <div className="flex-[2] min-w-0 border-l border-gray-800 overflow-y-auto">

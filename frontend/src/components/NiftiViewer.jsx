@@ -100,7 +100,12 @@ export default function NiftiViewer({ originalFile, maskedBlob, overlayMeta }) {
     if (originalFile) {
       const url = URL.createObjectURL(originalFile)
       objectUrls.push(url)
-      volumes.push({ url, name: originalFile.name, colormap: 'gray', opacity: 1 })
+      volumes.push({ 
+        url, 
+        name: originalFile.name, 
+        colormap: 'gray', 
+        opacity: 1,
+      })
     }
 
     if (maskedBlob) {
@@ -131,6 +136,25 @@ export default function NiftiViewer({ originalFile, maskedBlob, overlayMeta }) {
     nv.loadVolumes(volumes)
       .then(() => {
         objectUrls.forEach((u) => URL.revokeObjectURL(u))
+        
+        // Dynamic contrast adjustment: aggressively brighten the base MRI
+        if (nv.volumes.length > 0) {
+          const mri = nv.volumes[0]
+          
+          // CRITICAL: If cal_min is <= 0, the background (0) will be rendered as semi-opaque,
+          // creating a "block" look. We force it slightly above 0 to keep background transparent.
+          if (mri.cal_min <= 0) {
+            mri.cal_min = 0.01
+          }
+
+          const range = mri.cal_max - mri.cal_min
+          if (range > 0) {
+            // Pull the white-point way down (to 18%) to make the whole scan look much lighter.
+            mri.cal_max = mri.cal_min + (range * 0.18)
+            nv.drawScene()
+          }
+        }
+        
         setVolumesReady((n) => n + 1)
       })
       .catch((e) => {
@@ -151,7 +175,7 @@ export default function NiftiViewer({ originalFile, maskedBlob, overlayMeta }) {
       if (nv.volumes[maskIndex].name === OVERLAY_BINARY) {
         nv.setColormap(nv.volumes[maskIndex].id, maskColormap)
       }
-      nv.updateGL()
+      nv.drawScene()
     }
   }, [maskColormap, maskOpacity])
 
@@ -162,16 +186,23 @@ export default function NiftiViewer({ originalFile, maskedBlob, overlayMeta }) {
     
     if (nv.volumes.length === 0) return
     if (sliceType === 4) {
-      nv.setVolumeRenderIllumination(0.6)
+      // High-fidelity 3D "Glass Brain" settings
+      nv.setVolumeRenderIllumination(1.0)
+      nv.opts.isGradients = true
+      nv.drawScene()
     } else {
       nv.setVolumeRenderIllumination(0)
+      nv.opts.isGradients = false
+      nv.drawScene()
     }
   }, [sliceType, volumesReady])
 
   useEffect(() => {
     const nv = nvRef.current
     if (!nv || !is3D || nv.volumes.length === 0) return
-    nv.setClipPlane([clipDepth === -1 ? 2 : clipDepth, 270, 0])
+    // distance 0 is center, 1 is edge. Nudge to cut through if -1.
+    const d = clipDepth === -1 ? 0.15 : clipDepth
+    nv.setClipPlane([d, 270, 0])
   }, [clipDepth, is3D, volumesReady])
 
   return (
