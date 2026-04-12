@@ -30,6 +30,29 @@ function rgbStr([r, g, b]) {
   return `rgb(${r},${g},${b})`
 }
 
+/**
+ * Generate VesselBoost-style discrete colormap LUT for NiiVue.
+ * Binary segmentation: background (0) → transparent, vessel (1) → red (255, 50, 50).
+ * Ported from vesselboost-webapp/web/js/app/labels.js
+ */
+function generateVesselBoostColormap() {
+  const size = 256
+  const R = new Array(size).fill(0)
+  const G = new Array(size).fill(0)
+  const B = new Array(size).fill(0)
+  const A = new Array(size).fill(0)
+
+  // NiiVue maps voxel values linearly through the LUT:
+  // voxel 0 (cal_min) → index 0, voxel 1 (cal_max) → index 255
+  // So vessel (value=1) maps to the last index (255)
+  R[255] = 255
+  G[255] = 50
+  B[255] = 50
+  A[255] = 255
+
+  return { R, G, B, A, min: 0, max: 1 }
+}
+
 function buildArteryLabelLut(hiddenArteries) {
   const R = [0]
   const G = [0]
@@ -92,11 +115,11 @@ function configureOverlayVolume(volume, isLabeledOverlay, arteryLabelLut) {
     return
   }
 
-  volume.colormap = 'hot'
-  volume.cal_min = 0.1
+  volume.colormap = 'vesselboost'
+  volume.cal_min = 0
   volume.cal_max = 1
   if (volume.hdr) {
-    volume.hdr.cal_min = 0.1
+    volume.hdr.cal_min = 0
     volume.hdr.cal_max = 1
   }
 }
@@ -226,17 +249,28 @@ export default function NiftiViewer({
 
     const nv = new Niivue({
       trustCalMinMax: false,
-      show3Dcrosshair: true,
+      show3Dcrosshair: false,
       backColor: [0.02, 0.02, 0.04, 1],
-      crosshairColor: [0, 0.9, 0.9, 0.8],
+      crosshairColor: [0.23, 0.51, 0.96, 1.0],
+      crosshairWidth: 0.75,
       selectionBoxColor: [1, 1, 1, 0.4],
       clipPlaneColor: [0.6, 0, 0.8, 0.5],
       isColorbar: false,
+      dragToMeasure: false,
+      textHeight: 0.03,
     })
 
     nv.opts.multiplanarShowRender = 1
     nv.dragMode = nv.dragModes?.contrast ?? 1
     nv.attachToCanvas(canvas)
+
+    // Register the VesselBoost custom colormap (ported from vesselboost-webapp)
+    try {
+      nv.addColormap('vesselboost', generateVesselBoostColormap())
+    } catch (e) {
+      console.warn('Could not register vesselboost colormap:', e)
+    }
+
     nv.onLocationChange = () => drawLabelCanvas()
     nvRef.current = nv
     setInitialized(true)
@@ -305,7 +339,7 @@ export default function NiftiViewer({
           const overlayVolume = await NVImage.loadFromFile({
             file: overlayFile,
             name: overlayFile.name,
-            colormap: isLabeledOverlay ? 'gray' : 'hot',
+            colormap: isLabeledOverlay ? 'gray' : 'vesselboost',
             opacity: 1,
             trustCalMinMax: false,
             ignoreZeroVoxels: true,
@@ -546,7 +580,7 @@ export default function NiftiViewer({
                 style={{
                   background: isLabeledOverlay
                     ? 'linear-gradient(90deg,rgb(51,153,255),rgb(255,204,0),rgb(255,128,0))'
-                    : '#f97316',
+                    : 'rgb(255, 50, 50)',
                 }}
               />
               <span className="text-xs text-gray-500">
