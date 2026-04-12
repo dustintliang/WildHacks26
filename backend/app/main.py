@@ -241,7 +241,10 @@ async def analyze_demo():
         content={
             "job_id": job_id,
             "status": "processing",
-            "message": "Demo analysis started. Poll GET /results/demo-job for results.",
+            "message": (
+                f"Demo analysis started. Poll GET /analyze/{job_id} for per-artery findings "
+                f"or GET /render/{job_id} for mask metadata."
+            ),
         },
     )
 
@@ -262,46 +265,114 @@ async def get_demo_nifti():
 # ---------------------------------------------------------------------------
 # GET /results/{job_id} — unified polling endpoint
 # ---------------------------------------------------------------------------
-@app.get("/results/{job_id}", tags=["Analysis"])
-async def get_results(job_id: str):
+@app.get("/analyze/{job_id}", tags=["Analysis"])
+async def get_analyze(job_id: str):
     """
-    Retrieve analysis results for a given job.
+    Retrieve per-artery findings for a given job.
 
-    Returns the full JSON result when processing is complete,
-    or a status/progress object if still processing or failed.
+    Returns binary_segments (voxels, centerlines, findings, analysis sentence)
+    for all 11 arteries when complete, or processing/failed status while running.
     """
     if job_id not in _jobs:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Job '{job_id}' not found.",
-        )
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
 
     job = _jobs[job_id]
 
     if job["status"] == "processing":
-        return JSONResponse(
-            status_code=200,
-            content={
-                "job_id": job_id,
-                "status": "processing",
-                "progress": job.get("progress", {"step": 0, "total": 8, "action": "Starting..."}),
+        return JSONResponse(status_code=200, content={
+            "job_id": job_id,
+            "status": "processing",
+            "progress": job.get("progress", {"step": 0, "total": 8, "action": "Starting..."}),
+        })
+    if job["status"] == "failed":
+        return JSONResponse(status_code=200, content={
+            "job_id": job_id,
+            "status": "failed",
+            "message": job.get("error", "Pipeline failed with unknown error."),
+        })
+
+    result = job["result"]
+    binary_segments = {}
+    for name in ARTERY_NAMES:
+        artery = result.get("arteries", {}).get(name, {})
+        binary_segments[name] = {
+            "visible": artery.get("visible", False),
+            "voxel_count": artery.get("voxel_count", 0),
+            "data": artery.get("voxel_indices", []),
+            "centerline": artery.get("centerline_indices", []),
+            "mean_radius_mm": artery.get("mean_radius_mm", 0.0),
+            "segment_length_mm": artery.get("segment_length_mm", 0.0),
+            "findings": {
+                "stenosis": artery.get("stenosis_candidates", []),
+                "aneurysms": artery.get("aneurysm_candidates", []),
+                "tortuosity": artery.get("tortuosity"),
             },
-        )
-    elif job["status"] == "failed":
-        return JSONResponse(
-            status_code=200,
-            content={
-                "job_id": job_id,
-                "status": "failed",
-                "message": job.get("error", "Pipeline failed with unknown error."),
-            },
-        )
-    else:
-        # Complete — return full result
-        return JSONResponse(
-            status_code=200,
-            content=job["result"],
-        )
+            "analysis": artery.get("analysis", ""),
+        }
+
+    gemini = result.get("gemini_report", {})
+    narrative = gemini.get("narrative_summary", "") if isinstance(gemini, dict) else ""
+
+    return JSONResponse(status_code=200, content={
+        "job_id": job_id,
+        "status": "complete",
+        "binary_segments": binary_segments,
+        "risk_scores": result.get("risk_scores", {}),
+        "narrative_summary": narrative,
+    })
+
+
+# ---------------------------------------------------------------------------
+# GET /render/{job_id}
+# ---------------------------------------------------------------------------
+@app.get("/render/{job_id}", tags=["Analysis"])
+async def get_render(job_id: str):
+    """
+    Retrieve mask metadata and NIfTI URLs for a given job.
+
+    Returns shape, voxel_size, affine, mask_url, and overlay_url when complete.
+    Voxel data is never inlined — fetch the NIfTI files via the /output static mount.
+    """
+    if job_id not in _jobs:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
+
+    job = _jobs[job_id]
+
+    if job["status"] == "processing":
+        return JSONResponse(status_code=200, content={
+            "job_id": job_id,
+            "status": "processing",
+            "progress": job.get("progress", {"step": 0, "total": 8, "action": "Starting..."}),
+        })
+    if job["status"] == "failed":
+        return JSONResponse(status_code=200, content={
+            "job_id": job_id,
+            "status": "failed",
+            "message": job.get("error", "Pipeline failed with unknown error."),
+        })
+
+    result = job["result"]
+
+    def _to_url(abs_path: str) -> str:
+        if not abs_path:
+            return ""
+        try:
+            from pathlib import Path
+            rel = Path(abs_path).relative_to(OUTPUT_DIR)
+            return f"/output/{rel}"
+        except Exception:
+            return ""
+
+    return JSONResponse(status_code=200, content={
+        "job_id": job_id,
+        "status": "complete",
+        "shape": result.get("mask_shape", []),
+        "voxel_size": result.get("mask_voxel_size", []),
+        "affine": result.get("mask_affine", []),
+        "mask_url": _to_url(result.get("output_mask_path", "")),
+        "overlay_url": _to_url(result.get("overlay_path", "")),
+        "vessel_voxel_count": result.get("vessel_voxel_count", 0),
+    })
 
 
 # ---------------------------------------------------------------------------
