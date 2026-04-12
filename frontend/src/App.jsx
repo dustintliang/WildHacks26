@@ -16,11 +16,13 @@ export default function App() {
   const [segments, setSegments] = useState({})
   const [riskScores, setRiskScores] = useState({})
   const [narrativeSummary, setNarrativeSummary] = useState('')
+  const [overlayMeta, setOverlayMeta] = useState(null)
 
   const handleSubmit = async (file, isDemo = false) => {
     setError(null)
     setOriginalFile(file)
     setMaskedBlob(null)
+    setOverlayMeta(null)
     setAnalysis('')
     setSegments({})
     setRiskScores({})
@@ -41,9 +43,10 @@ export default function App() {
           await new Promise(r => setTimeout(r, 1250))
         }
 
-        const [analysisRes, demoNiftiRes] = await Promise.all([
+        const [analysisRes, demoNiftiRes, overlayRes] = await Promise.all([
           fetch('/fixtures/analyze_response.json'),
           fetch('/fixtures/demo.nii.gz'),
+          fetch('/fixtures/demo_overlay.nii.gz'),
         ])
         const analysisData = await analysisRes.json()
 
@@ -53,12 +56,16 @@ export default function App() {
           setOriginalFile(new File([blob], 'demo.nii.gz', { type: 'application/gzip' }))
         }
 
+        // Load color-coded vessel overlay
+        if (overlayRes.ok) {
+          setMaskedBlob(await overlayRes.blob())
+          setOverlayMeta({ kind: 'artery_labels' })
+        }
+
         setSegments(analysisData.binary_segments ?? {})
         setRiskScores(analysisData.risk_scores ?? {})
         setNarrativeSummary(analysisData.narrative_summary ?? '')
         setAnalysis(analysisData.narrative_summary ?? '')
-
-        // Overlay is only available when the backend has processed the real scan
 
         setProgress({ step: 8, total: 8, action: 'Analysis complete!' })
         setPhase('results')
@@ -104,14 +111,17 @@ export default function App() {
       setNarrativeSummary(data.narrative_summary ?? '')
       setAnalysis(data.narrative_summary ?? '')
 
-      // Fetch severity-coded overlay NIfTI from /render/{job_id} for NiiVue
+      // Fetch color-coded overlay NIfTI from /render/{job_id} for NiiVue
       try {
         const renderRes = await fetch(`${API_BASE}/render/${jobId}`)
         if (renderRes.ok) {
           const renderData = await renderRes.json()
           if (renderData.overlay_url) {
             const r = await fetch(`${API_BASE}${renderData.overlay_url}`)
-            if (r.ok) setMaskedBlob(await r.blob())
+            if (r.ok) {
+              setMaskedBlob(await r.blob())
+              setOverlayMeta({ kind: 'artery_labels' })
+            }
           }
         }
       } catch (e) {
@@ -133,6 +143,7 @@ export default function App() {
     setSegments({})
     setRiskScores({})
     setNarrativeSummary('')
+    setOverlayMeta(null)
     setError(null)
     setProgress({ step: 0, total: 8, action: 'Starting...' })
   }
@@ -149,7 +160,7 @@ export default function App() {
         {(phase === 'processing' || phase === 'results') && (
           <div className="flex h-full">
             <div className="flex-[3] min-w-0">
-              <NiftiViewer originalFile={originalFile} maskedBlob={maskedBlob} />
+              <NiftiViewer originalFile={originalFile} maskedBlob={maskedBlob} overlayMeta={overlayMeta} />
             </div>
 
             <div className="flex-[2] min-w-0 border-l border-gray-800 overflow-y-auto">
