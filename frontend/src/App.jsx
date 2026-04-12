@@ -35,7 +35,6 @@ export default function App() {
   const [segments, setSegments] = useState({})
   const [riskScores, setRiskScores] = useState({})
   const [narrativeSummary, setNarrativeSummary] = useState('')
-  const [overlayMeta, setOverlayMeta] = useState(null)
   const [viewMode, setViewMode] = useState('mri') // 'mri' | 'vessel3d'
   const handleSubmit = async (file, isDemo = false) => {
     setError(null)
