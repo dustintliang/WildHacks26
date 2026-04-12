@@ -5,7 +5,7 @@ A Python FastAPI backend for automated cerebrovascular arterial blood vessel ana
 
 ## Contributors
 
-Dustin Liang, Jason Ta, Hub Varith, Vivian Chang
+Hub Varith, Jason Ta, Dustin Liang, Vivian Chang
 
 ## Repository
 
