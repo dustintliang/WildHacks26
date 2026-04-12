@@ -1,5 +1,7 @@
 # VascuSense
 
+A Python FastAPI backend for automated cerebrovascular arterial blood vessel analysis from TOF-MRA neuroimaging data. Upload a raw NIfTI file and receive a full structured analysis including vessel segmentation, artery labeling, stenosis/aneurysm/tortuosity detection, small vessel disease metrics, AI-generated clinical narrative, and rule-based risk scores.
+
 
 ## Description
 
