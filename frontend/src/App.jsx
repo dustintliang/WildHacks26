@@ -41,12 +41,19 @@ export default function App() {
           await new Promise(r => setTimeout(r, 1250))
         }
 
-        const [analysisRes, renderRes] = await Promise.all([
+        const [analysisRes, renderRes, demoNiftiRes] = await Promise.all([
           fetch('/fixtures/analyze_response.json'),
           fetch('/fixtures/render_response.json'),
+          fetch('/fixtures/demo.nii.gz'),
         ])
         const analysisData = await analysisRes.json()
         const renderData = await renderRes.json()
+
+        // Load demo NIfTI so the viewer shows the brain scan
+        if (demoNiftiRes.ok) {
+          const blob = await demoNiftiRes.blob()
+          setOriginalFile(new File([blob], 'demo.nii.gz', { type: 'application/gzip' }))
+        }
 
         setSegments(analysisData.binary_segments ?? {})
         setRiskScores(analysisData.risk_scores ?? {})
