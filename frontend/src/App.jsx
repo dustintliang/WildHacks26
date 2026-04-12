@@ -3,6 +3,7 @@ import Header from './components/Header'
 import UploadZone from './components/UploadZone'
 import NiftiViewer from './components/NiftiViewer'
 import Vessel3DViewer from './components/Vessel3DViewer'
+import FindingsViewer from './components/FindingsViewer'
 import AnalysisPanel from './components/AnalysisPanel'
 
 const API_BASE = 'http://127.0.0.1:8000'
@@ -35,7 +36,7 @@ export default function App() {
   const [segments, setSegments] = useState({})
   const [riskScores, setRiskScores] = useState({})
   const [narrativeSummary, setNarrativeSummary] = useState('')
-  const [viewMode, setViewMode] = useState('mri') // 'mri' | 'vessel3d'
+  const [viewMode, setViewMode] = useState('mri') // 'mri' | 'vessel3d' | 'findings'
 
   const handleSubmit = async (file, isDemo = false) => {
     setError(null)
@@ -230,6 +231,22 @@ export default function App() {
                       3D Vessel View
                     </span>
                   </button>
+                  <button
+                    onClick={() => setViewMode('findings')}
+                    className={`px-3 py-1.5 text-xs rounded-lg font-semibold transition-all ${
+                      viewMode === 'findings'
+                        ? 'bg-amber-400 text-black shadow-lg shadow-amber-500/30'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                      </svg>
+                      Findings Map
+                    </span>
+                  </button>
                 </div>
               )}
 
@@ -240,6 +257,10 @@ export default function App() {
                     originalFile={originalFile}
                     maskedBlob={maskedBlob}
                     overlayMeta={overlayMeta}
+                    analyzeResponse={analyzeResponse}
+                  />
+                ) : viewMode === 'findings' ? (
+                  <FindingsViewer
                     analyzeResponse={analyzeResponse}
                   />
                 ) : (

@@ -153,8 +153,8 @@ export default function Vessel3DViewer({ analyzeResponse }) {
         for (let i = 0; i < seg.data.length; i++) {
           const [x, y, z] = seg.data[i]
           positions[i * 3]     = x - cx
-          positions[i * 3 + 1] = y - cy
-          positions[i * 3 + 2] = z - cz
+          positions[i * 3 + 1] = z - cz
+          positions[i * 3 + 2] = -(y - cy)
           colors[i * 3]     = color.r
           colors[i * 3 + 1] = color.g
           colors[i * 3 + 2] = color.b
@@ -183,7 +183,7 @@ export default function Vessel3DViewer({ analyzeResponse }) {
         if (centerline.length > 1) {
           // Build a tube along the centerline
           const curvePoints = centerline.map(
-            ([x, y, z]) => new THREE.Vector3(x - cx, y - cy, z - cz)
+            ([x, y, z]) => new THREE.Vector3(x - cx, z - cz, -(y - cy))
           )
           const curve = new THREE.CatmullRomCurve3(curvePoints, false, 'catmullrom', 0.5)
           const tubeRadius = Math.max(0.8, (seg.mean_radius_mm || 1) * 3)
@@ -208,8 +208,8 @@ export default function Vessel3DViewer({ analyzeResponse }) {
         for (let i = 0; i < sampled.length; i++) {
           const [x, y, z] = sampled[i]
           positions[i * 3]     = x - cx
-          positions[i * 3 + 1] = y - cy
-          positions[i * 3 + 2] = z - cz
+          positions[i * 3 + 1] = z - cz
+          positions[i * 3 + 2] = -(y - cy)
           colorsArr[i * 3]     = color.r
           colorsArr[i * 3 + 1] = color.g
           colorsArr[i * 3 + 2] = color.b
@@ -230,10 +230,9 @@ export default function Vessel3DViewer({ analyzeResponse }) {
       }
     }
 
-    // Add a subtle grid helper
+    // Add a subtle grid helper (horizontal in Y-up space)
     const gridHelper = new THREE.GridHelper(400, 40, 0x222233, 0x111122)
-    gridHelper.rotation.x = Math.PI / 2
-    gridHelper.position.z = -50
+    gridHelper.position.y = -50
     group.add(gridHelper)
 
     scene.add(group)
