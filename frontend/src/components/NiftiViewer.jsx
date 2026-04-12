@@ -69,7 +69,16 @@ function getBestWindow(volume) {
 }
 
 function configureBaseVolume(volume) {
-  const [calMin, calMax] = getBestWindow(volume)
+  let [calMin, calMax] = getBestWindow(volume)
+  
+  if (calMin <= 0) {
+    calMin = 0.01
+  }
+  const range = calMax - calMin
+  if (range > 0) {
+    calMax = calMin + (range * 0.18)
+  }
+
   volume.colormap = 'gray'
   volume.cal_min = calMin
   volume.cal_max = calMax
@@ -363,8 +372,15 @@ export default function NiftiViewer({
     if (!nv || !nv.volumes?.length) return
 
     nv.setSliceType(sliceType)
-    nv.setVolumeRenderIllumination?.(sliceType === 4 ? 0.6 : 0)
+    if (sliceType === 4) {
+      nv.setVolumeRenderIllumination?.(1.0)
+      nv.opts.isGradients = true
+    } else {
+      nv.setVolumeRenderIllumination?.(0)
+      nv.opts.isGradients = false
+    }
     drawLabelCanvas()
+    nv.drawScene()
   }, [drawLabelCanvas, sliceType, volumesReady])
 
   useEffect(() => {
@@ -400,7 +416,8 @@ export default function NiftiViewer({
     const nv = nvRef.current
     if (!nv || !is3D || !nv.volumes?.length) return
 
-    nv.setClipPlane([clipDepth === -1 ? 2 : clipDepth, 270, 0])
+    const d = clipDepth === -1 ? 0.15 : clipDepth
+    nv.setClipPlane([d, 270, 0])
   }, [clipDepth, is3D, volumesReady])
 
   const toggleArtery = useCallback((key) => {
