@@ -10,10 +10,7 @@ export default function App() {
   const [phase, setPhase] = useState('upload')
   const [originalFile, setOriginalFile] = useState(null)
   const [maskedBlob, setMaskedBlob] = useState(null)
-  const [overlayMeta, setOverlayMeta] = useState(null)
-  const [segments, setSegments] = useState({})
-  const [riskScores, setRiskScores] = useState({})
-  const [narrativeSummary, setNarrativeSummary] = useState('')
+  const [analysis, setAnalysis] = useState('')
   const [error, setError] = useState(null)
   const [progress, setProgress] = useState({ step: 0, total: 8, action: 'Starting...' })
 
@@ -21,15 +18,13 @@ export default function App() {
     setError(null)
     setOriginalFile(file)
     setMaskedBlob(null)
-    setOverlayMeta(null)
-    setSegments({})
-    setRiskScores({})
-    setNarrativeSummary('')
+    setAnalysis('')
     setProgress({ step: 0, total: 8, action: 'Connecting to server...' })
     setPhase('processing')
 
     try {
       let res
+
       if (isDemo) {
         // Fetch the demo NIfTI for the viewer while we start the analysis
         try {
@@ -57,10 +52,10 @@ export default function App() {
       const initialData = await res.json()
       const jobId = initialData.job_id
 
-      // Poll GET /results/{job_id} until complete
+      // Poll until complete, updating progress bar on every tick
       let data
       while (true) {
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        await new Promise(resolve => setTimeout(resolve, 1000))
         const pollRes = await fetch(`${API_BASE}/results/${jobId}`)
         if (!pollRes.ok) throw new Error(`Polling failed: ${pollRes.status}`)
         data = await pollRes.json()
@@ -78,28 +73,20 @@ export default function App() {
 
       setProgress({ step: 8, total: 8, action: 'Analysis complete!' })
 
-      setSegments(data.binary_segments ?? {})
-      setRiskScores(data.risk_scores ?? {})
-      setNarrativeSummary(data.narrative_summary ?? '')
-
-      // Fetch severity-coded overlay NIfTI from /render/{job_id} for NiiVue
-      try {
-        const renderRes = await fetch(`${API_BASE}/render/${jobId}`)
-        if (renderRes.ok) {
-          const renderData = await renderRes.json()
-          setOverlayMeta({
-            kind: renderData.overlay_kind || 'binary',
-            labelMap: renderData.label_map || null,
-          })
-          if (renderData.overlay_url) {
-            const r = await fetch(`${API_BASE}${renderData.overlay_url}`)
-            if (r.ok) setMaskedBlob(await r.blob())
-          }
-        }
-      } catch {
-        // Overlay is optional — viewer still works without it
+      let blob = null
+      if (data.output_mask_path) {
+        const maskUrl = data.output_mask_path.startsWith('/')
+          ? `${API_BASE}${data.output_mask_path}`
+          : `${API_BASE}/output/${data.output_mask_path}`
+        const r = await fetch(maskUrl)
+        if (r.ok) blob = await r.blob()
       }
 
+      setMaskedBlob(blob)
+      const narrative = data?.narrative_summary
+        || data?.gemini_report?.narrative_summary
+        || 'AI narrative not available.'
+      setAnalysis(narrative)
       setPhase('results')
     } catch (e) {
       console.error(e)
@@ -112,16 +99,13 @@ export default function App() {
     setPhase('upload')
     setOriginalFile(null)
     setMaskedBlob(null)
-    setOverlayMeta(null)
-    setSegments({})
-    setRiskScores({})
-    setNarrativeSummary('')
+    setAnalysis('')
     setError(null)
     setProgress({ step: 0, total: 8, action: 'Starting...' })
   }
 
   return (
-    <div className="flex flex-col h-screen text-white overflow-hidden">
+    <div className="flex flex-col h-screen bg-gray-950 text-white overflow-hidden">
       <Header />
 
       <main className="flex-1 overflow-hidden">
@@ -132,19 +116,14 @@ export default function App() {
         {(phase === 'processing' || phase === 'results') && (
           <div className="flex h-full">
             <div className="flex-[3] min-w-0">
-              <NiftiViewer originalFile={originalFile} maskedBlob={maskedBlob} overlayMeta={overlayMeta} />
+              <NiftiViewer originalFile={originalFile} maskedBlob={maskedBlob} />
             </div>
 
             <div className="flex-[2] min-w-0 border-l border-gray-800 overflow-y-auto">
               {phase === 'processing' ? (
                 <ProcessingPanel progress={progress} />
               ) : (
-                <AnalysisPanel
-                  segments={segments}
-                  riskScores={riskScores}
-                  narrativeSummary={narrativeSummary}
-                  onReset={reset}
-                />
+                <AnalysisPanel analysis={analysis} onReset={reset} />
               )}
             </div>
           </div>
@@ -171,12 +150,16 @@ function ProcessingPanel({ progress }) {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Header */}
       <div className="px-5 py-4 border-b border-gray-800 shrink-0">
         <h2 className="text-sm font-semibold text-white">Analyzing Scan</h2>
         <p className="text-xs text-gray-500 mt-0.5">Cerebrovascular pipeline running...</p>
       </div>
 
+      {/* Progress section */}
       <div className="flex-1 px-5 py-6 flex flex-col gap-6">
+
+        {/* Big percentage display */}
         <div className="text-center">
           <span className="text-5xl font-bold tabular-nums" style={{
             background: 'linear-gradient(90deg, #22d3ee, #818cf8)',
@@ -190,6 +173,7 @@ function ProcessingPanel({ progress }) {
           </p>
         </div>
 
+        {/* Progress bar track */}
         <div className="relative h-3 bg-gray-800 rounded-full overflow-hidden">
           <div
             className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
@@ -199,6 +183,7 @@ function ProcessingPanel({ progress }) {
               boxShadow: '0 0 12px rgba(99, 102, 241, 0.6)',
             }}
           />
+          {/* Animated shimmer overlay */}
           <div
             className="absolute inset-y-0 left-0 rounded-full pointer-events-none"
             style={{
@@ -209,6 +194,7 @@ function ProcessingPanel({ progress }) {
           />
         </div>
 
+        {/* 8-step grid */}
         <div className="grid grid-cols-4 gap-1.5">
           {STEP_LABELS.map((label, i) => {
             const stepNum = i + 1
@@ -241,6 +227,7 @@ function ProcessingPanel({ progress }) {
         </div>
       </div>
 
+      {/* Footer */}
       <div className="px-5 py-4 border-t border-gray-800 shrink-0">
         <p className="text-xs text-gray-600 leading-relaxed">
           CPU mode: ~4–5 min. The NIfTI viewer renders the original scan while the model runs.

@@ -128,19 +128,25 @@ ARTERY_NAMES: list[str] = [
     "right_vertebral",
 ]
 
-# eICAB label-to-name mapping (typical eICAB output labels)
+# eICAB label-to-name mapping.
+# Upstream eICAB emits the Circle of Willis labels below. We collapse the
+# left/right PCA branches (P1/P2) into a single left/right PCA artery name
+# for the rest of this pipeline. Vertebrals are not part of upstream eICAB;
+# synthetic labels 101/102 are reserved for the atlas-based fallback.
 EICAB_LABEL_MAP: dict[int, str] = {
     1: "left_ICA",
     2: "right_ICA",
-    3: "left_MCA",
-    4: "right_MCA",
+    3: "basilar",
     5: "left_ACA",
     6: "right_ACA",
-    7: "left_PCA",
-    8: "right_PCA",
-    9: "basilar",
-    10: "left_vertebral",
-    11: "right_vertebral",
+    7: "left_MCA",
+    8: "right_MCA",
+    11: "left_PCA",
+    12: "right_PCA",
+    13: "left_PCA",
+    14: "right_PCA",
+    101: "left_vertebral",
+    102: "right_vertebral",
 }
 
 # Posterior circulation arteries (higher weight in aneurysm rupture risk)
@@ -151,7 +157,7 @@ POSTERIOR_CIRCULATION: set[str] = {
 # ---------------------------------------------------------------------------
 # Gemini model configuration
 # ---------------------------------------------------------------------------
-GEMINI_MODEL: str = "gemini-2.0-flash"
+GEMINI_MODEL: str = "gemini-1.5-pro-latest"
 GEMINI_SYSTEM_PROMPT: str = (
     "You are a neuroradiology analysis assistant. You will receive MRI vessel "
     "overlay images and structured feature data extracted from a cerebrovascular "

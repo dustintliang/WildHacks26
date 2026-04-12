@@ -1,0 +1,1719 @@
+{
+  "job_id": "9b6e3db7-15fc-40d7-8ca3-d90795f187ae",
+  "status": "complete",
+  "binary_segments": {
+    "left_ICA": {
+      "visible": true,
+      "voxel_count": 4344,
+      "data": "<4344 voxels omitted>",
+      "centerline": [
+        [
+          281,
+          277,
+          22
+        ],
+        [
+          282,
+          277,
+          21
+        ],
+        [
+          283,
+          278,
+          21
+        ],
+        [
+          282,
+          276,
+          23
+        ],
+        [
+          283,
+          275,
+          24
+        ],
+        [
+          284,
+          274,
+          24
+        ],
+        [
+          285,
+          274,
+          24
+        ],
+        [
+          286,
+          273,
+          24
+        ],
+        [
+          287,
+          274,
+          24
+        ],
+        [
+          286,
+          272,
+          23
+        ],
+        [
+          286,
+          271,
+          23
+        ],
+        [
+          285,
+          270,
+          22
+        ],
+        "..."
+      ],
+      "mean_radius_mm": 1.0801018500583068,
+      "segment_length_mm": 195.35813877573543,
+      "findings": {
+        "stenosis": [
+          {
+            "artery_name": "left_ICA",
+            "voxel_coordinates": [
+              281.0,
+              277.0,
+              22.0
+            ],
+            "mni_coordinates": [
+              -11.329900819791874,
+              18.924087683786638,
+              4.4102029940113425
+            ],
+            "stenosis_percent": 71.7,
+            "severity": "severe",
+            "affected_segment_length_mm": 173.0,
+            "r_min": 0.469,
+            "r_reference": 1.654
+          }
+        ],
+        "aneurysms": [
+          {
+            "artery_name": "left_ICA",
+            "bifurcation_voxel_coords": [
+              286.0,
+              273.0,
+              24.0
+            ],
+            "mni_coords": [
+              -13.646188851698753,
+              17.26712169102393,
+              6.269789261743426
+            ],
+            "size_ratio": 3.14,
+            "aspect_ratio": 1.4,
+            "deviation_score": 2.14,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "left_ICA",
+            "bifurcation_voxel_coords": [
+              297.0,
+              258.0,
+              4.0
+            ],
+            "mni_coords": [
+              -19.07255485407586,
+              8.314714071457274,
+              -8.644439336843789
+            ],
+            "size_ratio": 2.91,
+            "aspect_ratio": 1.28,
+            "deviation_score": 1.91,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "left_ICA",
+            "bifurcation_voxel_coords": [
+              304.0,
+              218.0,
+              4.0
+            ],
+            "mni_coords": [
+              -22.35304155968697,
+              -10.283346289768815,
+              -6.261234976351261
+            ],
+            "size_ratio": 1.0,
+            "aspect_ratio": 2.93,
+            "deviation_score": 0.41,
+            "confidence": "moderate"
+          }
+        ],
+        "tortuosity": {
+          "distance_factor": 12.528,
+          "soam": 0.6408,
+          "flagged": true
+        }
+      },
+      "analysis": "left_ICA: 1 severe stenosis site(s); 2 high-confidence aneurysm candidate(s); elevated tortuosity."
+    },
+    "right_ICA": {
+      "visible": true,
+      "voxel_count": 4904,
+      "data": "<4904 voxels omitted>",
+      "centerline": [
+        [
+          209,
+          202,
+          0
+        ],
+        [
+          208,
+          202,
+          1
+        ],
+        [
+          207,
+          202,
+          2
+        ],
+        [
+          206,
+          202,
+          3
+        ],
+        [
+          207,
+          203,
+          4
+        ],
+        [
+          207,
+          204,
+          5
+        ],
+        [
+          207,
+          205,
+          6
+        ],
+        [
+          208,
+          206,
+          6
+        ],
+        [
+          209,
+          207,
+          7
+        ],
+        [
+          208,
+          208,
+          7
+        ],
+        [
+          209,
+          209,
+          8
+        ],
+        [
+          209,
+          210,
+          8
+        ],
+        "..."
+      ],
+      "mean_radius_mm": 1.0049800770098152,
+      "segment_length_mm": 235.61811709140093,
+      "findings": {
+        "stenosis": [
+          {
+            "artery_name": "right_ICA",
+            "voxel_coordinates": [
+              209.0,
+              202.0,
+              0.0
+            ],
+            "mni_coordinates": [
+              22.117745204453968,
+              -18.215524060535245,
+              -9.25319526065141
+            ],
+            "stenosis_percent": 31.2,
+            "severity": "normal",
+            "affected_segment_length_mm": 145.6,
+            "r_min": 0.469,
+            "r_reference": 0.681
+          }
+        ],
+        "aneurysms": [
+          {
+            "artery_name": "right_ICA",
+            "bifurcation_voxel_coords": [
+              225.0,
+              261.0,
+              9.0
+            ],
+            "mni_coords": [
+              14.740323676598564,
+              10.136219527688809,
+              -5.417776965536177
+            ],
+            "size_ratio": 3.81,
+            "aspect_ratio": 1.92,
+            "deviation_score": 2.81,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "right_ICA",
+            "bifurcation_voxel_coords": [
+              228.0,
+              266.0,
+              17.0
+            ],
+            "mni_coords": [
+              13.44262492584312,
+              13.259300027508289,
+              0.664412546902895
+            ],
+            "size_ratio": 3.81,
+            "aspect_ratio": 1.91,
+            "deviation_score": 2.81,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "right_ICA",
+            "bifurcation_voxel_coords": [
+              241.0,
+              235.0,
+              5.0
+            ],
+            "mni_coords": [
+              7.187396583130976,
+              -2.3385828154860064,
+              -6.953273520804942
+            ],
+            "size_ratio": 2.83,
+            "aspect_ratio": 2.74,
+            "deviation_score": 1.83,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "right_ICA",
+            "bifurcation_voxel_coords": [
+              246.0,
+              239.0,
+              5.0
+            ],
+            "mni_coords": [
+              4.843953487716135,
+              -0.47319988277740777,
+              -7.146689819172025
+            ],
+            "size_ratio": 2.83,
+            "aspect_ratio": 4.31,
+            "deviation_score": 1.83,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "right_ICA",
+            "bifurcation_voxel_coords": [
+              229.0,
+              239.0,
+              31.0
+            ],
+            "mni_coords": [
+              13.163815428755697,
+              2.0923951087752357,
+              13.355465705506504
+            ],
+            "size_ratio": 1.4,
+            "aspect_ratio": 1.7,
+            "deviation_score": 0.4,
+            "confidence": "moderate"
+          }
+        ],
+        "tortuosity": {
+          "distance_factor": 10.097,
+          "soam": 0.7071,
+          "flagged": true
+        }
+      },
+      "analysis": "right_ICA: 4 high-confidence aneurysm candidate(s); elevated tortuosity."
+    },
+    "left_MCA": {
+      "visible": true,
+      "voxel_count": 2680,
+      "data": "<2680 voxels omitted>",
+      "centerline": [
+        [
+          300,
+          206,
+          36
+        ],
+        [
+          301,
+          206,
+          36
+        ],
+        [
+          302,
+          206,
+          35
+        ],
+        [
+          303,
+          206,
+          35
+        ],
+        [
+          304,
+          205,
+          35
+        ],
+        [
+          304,
+          226,
+          18
+        ],
+        [
+          303,
+          227,
+          18
+        ],
+        [
+          303,
+          228,
+          18
+        ],
+        [
+          302,
+          229,
+          18
+        ],
+        [
+          301,
+          230,
+          18
+        ],
+        [
+          301,
+          231,
+          18
+        ],
+        [
+          301,
+          232,
+          18
+        ],
+        "..."
+      ],
+      "mean_radius_mm": 0.7862940022966449,
+      "segment_length_mm": 346.3298902903832,
+      "findings": {
+        "stenosis": [],
+        "aneurysms": [
+          {
+            "artery_name": "left_MCA",
+            "bifurcation_voxel_coords": [
+              315.0,
+              280.0,
+              40.0
+            ],
+            "mni_coords": [
+              -27.021268021097057,
+              22.1404177689692,
+              18.789964840747416
+            ],
+            "size_ratio": 2.08,
+            "aspect_ratio": 2.02,
+            "deviation_score": 1.08,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "left_MCA",
+            "bifurcation_voxel_coords": [
+              334.0,
+              279.0,
+              41.0
+            ],
+            "mni_coords": [
+              -35.91268499180478,
+              21.793201150139794,
+              19.79154216311872
+            ],
+            "size_ratio": 1.54,
+            "aspect_ratio": 2.45,
+            "deviation_score": 0.54,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "left_MCA",
+            "bifurcation_voxel_coords": [
+              338.0,
+              274.0,
+              44.0
+            ],
+            "mni_coords": [
+              -37.746734675205516,
+              19.769450480351225,
+              22.495147375389934
+            ],
+            "size_ratio": 1.54,
+            "aspect_ratio": 1.79,
+            "deviation_score": 0.54,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "left_MCA",
+            "bifurcation_voxel_coords": [
+              341.0,
+              263.0,
+              42.0
+            ],
+            "mni_coords": [
+              -39.17979902494153,
+              14.457402753294446,
+              21.571606556884944
+            ],
+            "size_ratio": 1.54,
+            "aspect_ratio": 2.29,
+            "deviation_score": 0.54,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "left_MCA",
+            "bifurcation_voxel_coords": [
+              349.0,
+              276.0,
+              55.0
+            ],
+            "mni_coords": [
+              -42.753228806010156,
+              21.80293938110117,
+              31.19605082925409
+            ],
+            "size_ratio": 1.3,
+            "aspect_ratio": 1.77,
+            "deviation_score": 0.41,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "left_MCA",
+            "bifurcation_voxel_coords": [
+              339.0,
+              221.0,
+              50.0
+            ],
+            "mni_coords": [
+              -38.13374007495986,
+              -4.2851770498091355,
+              30.34987571556121
+            ],
+            "size_ratio": 1.17,
+            "aspect_ratio": 2.36,
+            "deviation_score": 0.41,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "left_MCA",
+            "bifurcation_voxel_coords": [
+              346.0,
+              256.0,
+              49.0
+            ],
+            "mni_coords": [
+              -41.428323776926845,
+              11.901650849031284,
+              27.574274195358157
+            ],
+            "size_ratio": 1.17,
+            "aspect_ratio": 3.52,
+            "deviation_score": 0.41,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "left_MCA",
+            "bifurcation_voxel_coords": [
+              344.0,
+              268.0,
+              56.0
+            ],
+            "mni_coords": [
+              -40.396208178841334,
+              18.176381985656917,
+              32.41596841067076
+            ],
+            "size_ratio": 0.83,
+            "aspect_ratio": 3.56,
+            "deviation_score": 0.41,
+            "confidence": "moderate"
+          }
+        ],
+        "tortuosity": {
+          "distance_factor": 13.658,
+          "soam": 0.5671,
+          "flagged": true
+        }
+      },
+      "analysis": "left_MCA: 1 high-confidence aneurysm candidate(s); elevated tortuosity."
+    },
+    "right_MCA": {
+      "visible": true,
+      "voxel_count": 3350,
+      "data": "<3350 voxels omitted>",
+      "centerline": [
+        [
+          119,
+          220,
+          42
+        ],
+        [
+          119,
+          221,
+          42
+        ],
+        [
+          137,
+          252,
+          52
+        ],
+        [
+          138,
+          253,
+          51
+        ],
+        [
+          138,
+          254,
+          51
+        ],
+        [
+          139,
+          253,
+          51
+        ],
+        [
+          140,
+          253,
+          50
+        ],
+        [
+          141,
+          253,
+          50
+        ],
+        [
+          142,
+          253,
+          50
+        ],
+        [
+          143,
+          254,
+          49
+        ],
+        [
+          144,
+          254,
+          49
+        ],
+        [
+          145,
+          254,
+          49
+        ],
+        "..."
+      ],
+      "mean_radius_mm": 0.8309598542109728,
+      "segment_length_mm": 346.9241730555062,
+      "findings": {
+        "stenosis": [
+          {
+            "artery_name": "right_MCA",
+            "voxel_coordinates": [
+              161.0,
+              255.0,
+              51.0
+            ],
+            "mni_coordinates": [
+              45.30509177448948,
+              11.454156492021866,
+              27.76245145406574
+            ],
+            "stenosis_percent": 41.3,
+            "severity": "normal",
+            "affected_segment_length_mm": 197.0,
+            "r_min": 0.469,
+            "r_reference": 0.798
+          }
+        ],
+        "aneurysms": [
+          {
+            "artery_name": "right_MCA",
+            "bifurcation_voxel_coords": [
+              196.0,
+              287.0,
+              41.0
+            ],
+            "mni_coords": [
+              28.765478179548154,
+              25.379163384903222,
+              18.238777570426464
+            ],
+            "size_ratio": 2.32,
+            "aspect_ratio": 2.59,
+            "deviation_score": 1.32,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "right_MCA",
+            "bifurcation_voxel_coords": [
+              215.0,
+              276.0,
+              39.0
+            ],
+            "mni_coords": [
+              19.833489574441046,
+              20.082770104403608,
+              17.441283454187214
+            ],
+            "size_ratio": 1.94,
+            "aspect_ratio": 2.26,
+            "deviation_score": 0.94,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "right_MCA",
+            "bifurcation_voxel_coords": [
+              162.0,
+              263.0,
+              49.0
+            ],
+            "mni_coords": [
+              44.80925394502083,
+              14.977483820402995,
+              25.717326806858182
+            ],
+            "size_ratio": 1.66,
+            "aspect_ratio": 2.49,
+            "deviation_score": 0.66,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "right_MCA",
+            "bifurcation_voxel_coords": [
+              138.0,
+              253.0,
+              51.0
+            ],
+            "mni_coords": [
+              56.08481002439112,
+              10.5014077660162,
+              27.697662265971303
+            ],
+            "size_ratio": 1.54,
+            "aspect_ratio": 2.85,
+            "deviation_score": 0.54,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "right_MCA",
+            "bifurcation_voxel_coords": [
+              180.0,
+              280.0,
+              40.0
+            ],
+            "mni_coords": [
+              36.250905383596546,
+              22.008333376143128,
+              17.72644579038024
+            ],
+            "size_ratio": 1.54,
+            "aspect_ratio": 2.63,
+            "deviation_score": 0.54,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "right_MCA",
+            "bifurcation_voxel_coords": [
+              161.0,
+              247.0,
+              54.0
+            ],
+            "mni_coords": [
+              45.34579510414005,
+              8.031124021974392,
+              30.609149410389364
+            ],
+            "size_ratio": 1.16,
+            "aspect_ratio": 2.99,
+            "deviation_score": 0.41,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "right_MCA",
+            "bifurcation_voxel_coords": [
+              165.0,
+              286.0,
+              49.0
+            ],
+            "mni_coords": [
+              43.403037369873346,
+              25.6782418085495,
+              24.40232667978853
+            ],
+            "size_ratio": 1.16,
+            "aspect_ratio": 1.91,
+            "deviation_score": 0.41,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "right_MCA",
+            "bifurcation_voxel_coords": [
+              125.0,
+              273.0,
+              32.0
+            ],
+            "mni_coords": [
+              61.92012259711373,
+              17.90413046593312,
+              11.351007441990077
+            ],
+            "size_ratio": 1.0,
+            "aspect_ratio": 5.05,
+            "deviation_score": 0.41,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "right_MCA",
+            "bifurcation_voxel_coords": [
+              125.0,
+              272.0,
+              58.0
+            ],
+            "mni_coords": [
+              62.27238483322435,
+              20.02123557741288,
+              32.045289061032236
+            ],
+            "size_ratio": 0.83,
+            "aspect_ratio": 4.42,
+            "deviation_score": 0.41,
+            "confidence": "moderate"
+          }
+        ],
+        "tortuosity": {
+          "distance_factor": 7.233,
+          "soam": 0.571,
+          "flagged": true
+        }
+      },
+      "analysis": "right_MCA: 3 high-confidence aneurysm candidate(s); elevated tortuosity."
+    },
+    "left_ACA": {
+      "visible": true,
+      "voxel_count": 3587,
+      "data": "<3587 voxels omitted>",
+      "centerline": [
+        [
+          267,
+          257,
+          32
+        ],
+        [
+          269,
+          262,
+          31
+        ],
+        [
+          270,
+          263,
+          31
+        ],
+        [
+          271,
+          264,
+          31
+        ],
+        [
+          271,
+          265,
+          31
+        ],
+        [
+          272,
+          266,
+          31
+        ],
+        [
+          273,
+          267,
+          31
+        ],
+        [
+          274,
+          268,
+          31
+        ],
+        [
+          275,
+          269,
+          31
+        ],
+        [
+          276,
+          270,
+          32
+        ],
+        [
+          276,
+          271,
+          33
+        ],
+        [
+          275,
+          272,
+          34
+        ],
+        "..."
+      ],
+      "mean_radius_mm": 0.914948179450085,
+      "segment_length_mm": 256.988942672157,
+      "findings": {
+        "stenosis": [
+          {
+            "artery_name": "left_ACA",
+            "voxel_coordinates": [
+              267.0,
+              257.0,
+              32.0
+            ],
+            "mni_coordinates": [
+              -4.632713106859228,
+              10.601100006490014,
+              13.400895495899022
+            ],
+            "stenosis_percent": 47.2,
+            "severity": "normal",
+            "affected_segment_length_mm": 203.0,
+            "r_min": 0.469,
+            "r_reference": 0.889
+          }
+        ],
+        "aneurysms": [
+          {
+            "artery_name": "left_ACA",
+            "bifurcation_voxel_coords": [
+              276.0,
+              288.0,
+              31.0
+            ],
+            "mni_coords": [
+              -8.864633075136226,
+              24.929393792990595,
+              10.873855706304312
+            ],
+            "size_ratio": 2.73,
+            "aspect_ratio": 1.49,
+            "deviation_score": 1.73,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "left_ACA",
+            "bifurcation_voxel_coords": [
+              283.0,
+              291.0,
+              28.0
+            ],
+            "mni_coords": [
+              -12.18607918449743,
+              26.033661435707472,
+              8.373310548253357
+            ],
+            "size_ratio": 2.62,
+            "aspect_ratio": 2.11,
+            "deviation_score": 1.62,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "left_ACA",
+            "bifurcation_voxel_coords": [
+              276.0,
+              271.0,
+              33.0
+            ],
+            "mni_coords": [
+              -8.837412164002671,
+              17.22094030166045,
+              13.450671531260014
+            ],
+            "size_ratio": 2.6,
+            "aspect_ratio": 1.47,
+            "deviation_score": 1.6,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "left_ACA",
+            "bifurcation_voxel_coords": [
+              281.0,
+              267.0,
+              38.0
+            ],
+            "mni_coords": [
+              -11.11305539748173,
+              15.861923675169237,
+              17.691343969665468
+            ],
+            "size_ratio": 2.39,
+            "aspect_ratio": 2.86,
+            "deviation_score": 1.39,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "left_ACA",
+            "bifurcation_voxel_coords": [
+              279.0,
+              263.0,
+              44.0
+            ],
+            "mni_coords": [
+              -10.094371003093329,
+              14.595374683733098,
+              22.670566366054118
+            ],
+            "size_ratio": 1.94,
+            "aspect_ratio": 2.01,
+            "deviation_score": 0.94,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "left_ACA",
+            "bifurcation_voxel_coords": [
+              286.0,
+              273.0,
+              24.0
+            ],
+            "mni_coords": [
+              -13.646188851698753,
+              17.26712169102393,
+              6.269789261743426
+            ],
+            "size_ratio": 1.85,
+            "aspect_ratio": 5.35,
+            "deviation_score": 0.85,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "left_ACA",
+            "bifurcation_voxel_coords": [
+              254.0,
+              286.0,
+              40.0
+            ],
+            "mni_coords": [
+              1.568336804088176,
+              24.87147156870924,
+              17.960202949121594
+            ],
+            "size_ratio": 1.76,
+            "aspect_ratio": 2.87,
+            "deviation_score": 0.76,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "left_ACA",
+            "bifurcation_voxel_coords": [
+              275.0,
+              269.0,
+              43.0
+            ],
+            "mni_coords": [
+              -8.233232103810224,
+              17.282880993909203,
+              21.496150461025536
+            ],
+            "size_ratio": 1.66,
+            "aspect_ratio": 2.35,
+            "deviation_score": 0.66,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "left_ACA",
+            "bifurcation_voxel_coords": [
+              254.0,
+              294.0,
+              44.0
+            ],
+            "mni_coords": [
+              1.6224713374358544,
+              28.989719226723537,
+              20.66937272436917
+            ],
+            "size_ratio": 1.16,
+            "aspect_ratio": 4.49,
+            "deviation_score": 0.41,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "left_ACA",
+            "bifurcation_voxel_coords": [
+              254.0,
+              332.0,
+              55.0
+            ],
+            "mni_coords": [
+              1.7712242416964727,
+              47.756863958900794,
+              27.18836603499949
+            ],
+            "size_ratio": 1.16,
+            "aspect_ratio": 4.73,
+            "deviation_score": 0.41,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "left_ACA",
+            "bifurcation_voxel_coords": [
+              255.0,
+              326.0,
+              52.0
+            ],
+            "mni_coords": [
+              1.2619405757250206,
+              44.669156618299894,
+              25.164366622455418
+            ],
+            "size_ratio": 1.16,
+            "aspect_ratio": 5.21,
+            "deviation_score": 0.41,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "left_ACA",
+            "bifurcation_voxel_coords": [
+              256.0,
+              312.0,
+              55.0
+            ],
+            "mni_coords": [
+              0.8340050378319575,
+              38.456366173923016,
+              28.36815133690834
+            ],
+            "size_ratio": 1.16,
+            "aspect_ratio": 5.12,
+            "deviation_score": 0.41,
+            "confidence": "moderate"
+          }
+        ],
+        "tortuosity": {
+          "distance_factor": 27.59,
+          "soam": 0.7107,
+          "flagged": true
+        }
+      },
+      "analysis": "left_ACA: 8 high-confidence aneurysm candidate(s); elevated tortuosity."
+    },
+    "right_ACA": {
+      "visible": true,
+      "voxel_count": 4050,
+      "data": "<4050 voxels omitted>",
+      "centerline": [
+        [
+          256,
+          249,
+          64
+        ],
+        [
+          256,
+          250,
+          63
+        ],
+        [
+          254,
+          290,
+          55
+        ],
+        [
+          254,
+          290,
+          54
+        ],
+        [
+          255,
+          289,
+          53
+        ],
+        [
+          254,
+          289,
+          52
+        ],
+        [
+          255,
+          289,
+          51
+        ],
+        [
+          254,
+          290,
+          50
+        ],
+        [
+          254,
+          290,
+          49
+        ],
+        [
+          254,
+          291,
+          48
+        ],
+        [
+          254,
+          292,
+          47
+        ],
+        [
+          254,
+          293,
+          46
+        ],
+        "..."
+      ],
+      "mean_radius_mm": 0.9359915326168676,
+      "segment_length_mm": 346.5674863152955,
+      "findings": {
+        "stenosis": [
+          {
+            "artery_name": "right_ACA",
+            "voxel_coordinates": [
+              256.0,
+              249.0,
+              64.0
+            ],
+            "mni_coordinates": [
+              0.9564003664945631,
+              10.047482311725616,
+              39.178102660924196
+            ],
+            "stenosis_percent": 33.3,
+            "severity": "normal",
+            "affected_segment_length_mm": 153.9,
+            "r_min": 0.469,
+            "r_reference": 0.703
+          }
+        ],
+        "aneurysms": [
+          {
+            "artery_name": "right_ACA",
+            "bifurcation_voxel_coords": [
+              237.0,
+              283.0,
+              32.0
+            ],
+            "mni_coords": [
+              9.42757964548764,
+              22.664938887231983,
+              11.651319625787437
+            ],
+            "size_ratio": 2.06,
+            "aspect_ratio": 1.62,
+            "deviation_score": 1.06,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "right_ACA",
+            "bifurcation_voxel_coords": [
+              226.0,
+              268.0,
+              36.0
+            ],
+            "mni_coords": [
+              14.637392881668347,
+              16.074601333821192,
+              15.612466176971793
+            ],
+            "size_ratio": 1.82,
+            "aspect_ratio": 0.0,
+            "deviation_score": 0.82,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "right_ACA",
+            "bifurcation_voxel_coords": [
+              233.0,
+              270.0,
+              33.0
+            ],
+            "mni_coords": [
+              11.315954088709987,
+              16.7137462469982,
+              13.17012249212712
+            ],
+            "size_ratio": 1.82,
+            "aspect_ratio": 1.44,
+            "deviation_score": 0.82,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "right_ACA",
+            "bifurcation_voxel_coords": [
+              229.0,
+              286.0,
+              29.0
+            ],
+            "mni_coords": [
+              13.136375025536836,
+              23.75453048630152,
+              9.032605684362352
+            ],
+            "size_ratio": 1.8,
+            "aspect_ratio": 2.27,
+            "deviation_score": 0.8,
+            "confidence": "high"
+          },
+          {
+            "artery_name": "right_ACA",
+            "bifurcation_voxel_coords": [
+              254.0,
+              286.0,
+              40.0
+            ],
+            "mni_coords": [
+              1.568336804088176,
+              24.87147156870924,
+              17.960202949121594
+            ],
+            "size_ratio": 1.42,
+            "aspect_ratio": 1.79,
+            "deviation_score": 0.49,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "right_ACA",
+            "bifurcation_voxel_coords": [
+              254.0,
+              294.0,
+              44.0
+            ],
+            "mni_coords": [
+              1.6224713374358544,
+              28.989719226723537,
+              20.66937272436917
+            ],
+            "size_ratio": 1.42,
+            "aspect_ratio": 2.64,
+            "deviation_score": 0.49,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "right_ACA",
+            "bifurcation_voxel_coords": [
+              227.0,
+              269.0,
+              43.0
+            ],
+            "mni_coords": [
+              14.263540662303058,
+              17.23591765423771,
+              21.118010354228318
+            ],
+            "size_ratio": 1.33,
+            "aspect_ratio": 4.3,
+            "deviation_score": 0.49,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "right_ACA",
+            "bifurcation_voxel_coords": [
+              256.0,
+              312.0,
+              55.0
+            ],
+            "mni_coords": [
+              0.8340050378319575,
+              38.456366173923016,
+              28.36815133690834
+            ],
+            "size_ratio": 1.33,
+            "aspect_ratio": 3.56,
+            "deviation_score": 0.49,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "right_ACA",
+            "bifurcation_voxel_coords": [
+              250.0,
+              341.0,
+              62.0
+            ],
+            "mni_coords": [
+              3.740727320911901,
+              52.63427010108717,
+              32.18890883214772
+            ],
+            "size_ratio": 1.13,
+            "aspect_ratio": 3.78,
+            "deviation_score": 0.49,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "right_ACA",
+            "bifurcation_voxel_coords": [
+              254.0,
+              332.0,
+              55.0
+            ],
+            "mni_coords": [
+              1.7712242416964727,
+              47.756863958900794,
+              27.18836603499949
+            ],
+            "size_ratio": 1.12,
+            "aspect_ratio": 3.94,
+            "deviation_score": 0.49,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "right_ACA",
+            "bifurcation_voxel_coords": [
+              255.0,
+              326.0,
+              52.0
+            ],
+            "mni_coords": [
+              1.2619405757250206,
+              44.669156618299894,
+              25.164366622455418
+            ],
+            "size_ratio": 1.12,
+            "aspect_ratio": 3.17,
+            "deviation_score": 0.49,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "right_ACA",
+            "bifurcation_voxel_coords": [
+              227.0,
+              267.0,
+              18.0
+            ],
+            "mni_coords": [
+              13.924848641543576,
+              13.822760809562169,
+              1.3920285450294614
+            ],
+            "size_ratio": 1.01,
+            "aspect_ratio": 5.71,
+            "deviation_score": 0.49,
+            "confidence": "moderate"
+          }
+        ],
+        "tortuosity": {
+          "distance_factor": 8.59,
+          "soam": 0.6711,
+          "flagged": true
+        }
+      },
+      "analysis": "right_ACA: 3 high-confidence aneurysm candidate(s); elevated tortuosity."
+    },
+    "left_PCA": {
+      "visible": true,
+      "voxel_count": 430,
+      "data": "<430 voxels omitted>",
+      "centerline": [
+        [
+          277,
+          191,
+          29
+        ],
+        [
+          280,
+          198,
+          29
+        ],
+        [
+          281,
+          199,
+          28
+        ],
+        [
+          281,
+          200,
+          28
+        ],
+        [
+          281,
+          201,
+          28
+        ],
+        [
+          281,
+          202,
+          27
+        ],
+        [
+          281,
+          203,
+          27
+        ],
+        [
+          282,
+          204,
+          26
+        ],
+        [
+          282,
+          205,
+          26
+        ],
+        [
+          282,
+          206,
+          26
+        ],
+        [
+          282,
+          207,
+          25
+        ],
+        [
+          283,
+          208,
+          25
+        ],
+        "..."
+      ],
+      "mean_radius_mm": 0.6123167234738096,
+      "segment_length_mm": 122.44605418713492,
+      "findings": {
+        "stenosis": [],
+        "aneurysms": [
+          {
+            "artery_name": "left_PCA",
+            "bifurcation_voxel_coords": [
+              284.0,
+              205.0,
+              29.0
+            ],
+            "mni_coords": [
+              -12.64058447367097,
+              -13.866598446387798,
+              14.180210553109646
+            ],
+            "size_ratio": 1.4,
+            "aspect_ratio": 1.71,
+            "deviation_score": 0.4,
+            "confidence": "moderate"
+          },
+          {
+            "artery_name": "left_PCA",
+            "bifurcation_voxel_coords": [
+              304.0,
+              218.0,
+              4.0
+            ],
+            "mni_coords": [
+              -22.35304155968697,
+              -10.283346289768815,
+              -6.261234976351261
+            ],
+            "size_ratio": 1.21,
+            "aspect_ratio": 3.87,
+            "deviation_score": 0.29,
+            "confidence": "moderate"
+          }
+        ],
+        "tortuosity": {
+          "distance_factor": 3.2,
+          "soam": 0.4751,
+          "flagged": true
+        }
+      },
+      "analysis": "left_PCA: 2 aneurysm candidate(s); elevated tortuosity."
+    },
+    "right_PCA": {
+      "visible": true,
+      "voxel_count": 591,
+      "data": "<591 voxels omitted>",
+      "centerline": [
+        [
+          244,
+          111,
+          12
+        ],
+        [
+          245,
+          111,
+          12
+        ],
+        [
+          191,
+          134,
+          7
+        ],
+        [
+          190,
+          135,
+          7
+        ],
+        [
+          189,
+          136,
+          7
+        ],
+        [
+          188,
+          137,
+          7
+        ],
+        [
+          187,
+          138,
+          8
+        ],
+        [
+          186,
+          139,
+          8
+        ],
+        [
+          185,
+          140,
+          8
+        ],
+        [
+          184,
+          140,
+          8
+        ],
+        [
+          183,
+          140,
+          8
+        ],
+        [
+          211,
+          179,
+          27
+        ],
+        "..."
+      ],
+      "mean_radius_mm": 0.623677445846656,
+      "segment_length_mm": 172.9454392781388,
+      "findings": {
+        "stenosis": [],
+        "aneurysms": [
+          {
+            "artery_name": "right_PCA",
+            "bifurcation_voxel_coords": [
+              219.0,
+              215.0,
+              33.0
+            ],
+            "mni_coords": [
+              17.87791521431609,
+              -8.881701518432237,
+              16.26091265399009
+            ],
+            "size_ratio": 1.0,
+            "aspect_ratio": 2.82,
+            "deviation_score": 0.29,
+            "confidence": "moderate"
+          }
+        ],
+        "tortuosity": {
+          "distance_factor": 3.364,
+          "soam": 0.4728,
+          "flagged": true
+        }
+      },
+      "analysis": "right_PCA: 1 aneurysm candidate(s); elevated tortuosity."
+    },
+    "basilar": {
+      "visible": false,
+      "voxel_count": 0,
+      "data": "<0 voxels omitted>",
+      "centerline": [],
+      "mean_radius_mm": 0.0,
+      "segment_length_mm": 0.0,
+      "findings": {
+        "stenosis": [],
+        "aneurysms": [],
+        "tortuosity": {
+          "distance_factor": 1.0,
+          "soam": 0.0,
+          "flagged": false
+        }
+      },
+      "analysis": "basilar is not visible in this scan."
+    },
+    "left_vertebral": {
+      "visible": false,
+      "voxel_count": 0,
+      "data": "<0 voxels omitted>",
+      "centerline": [],
+      "mean_radius_mm": 0.0,
+      "segment_length_mm": 0.0,
+      "findings": {
+        "stenosis": [],
+        "aneurysms": [],
+        "tortuosity": {
+          "distance_factor": 1.0,
+          "soam": 0.0,
+          "flagged": false
+        }
+      },
+      "analysis": "left_vertebral is not visible in this scan."
+    },
+    "right_vertebral": {
+      "visible": false,
+      "voxel_count": 0,
+      "data": "<0 voxels omitted>",
+      "centerline": [],
+      "mean_radius_mm": 0.0,
+      "segment_length_mm": 0.0,
+      "findings": {
+        "stenosis": [],
+        "aneurysms": [],
+        "tortuosity": {
+          "distance_factor": 1.0,
+          "soam": 0.0,
+          "flagged": false
+        }
+      },
+      "analysis": "right_vertebral is not visible in this scan."
+    }
+  },
+  "risk_scores": {
+    "large_vessel_stroke": {
+      "score": 82.8,
+      "severity": "high",
+      "drivers": [
+        "Stenosis: 71.7% in left_ICA",
+        "Tortuosity: DF=27.59 in left_ACA",
+        "Aneurysm candidate: high confidence in left_ICA"
+      ]
+    },
+    "lacunar_stroke": {
+      "score": 53.9,
+      "severity": "moderate",
+      "drivers": [
+        "SVD ratio: 0.092 (below 0.4 threshold)"
+      ]
+    },
+    "aneurysm_rupture": {
+      "score": 71.6,
+      "severity": "high",
+      "drivers": [
+        "Size ratio: 2.83 in right_ICA",
+        "Aspect ratio: 2.74",
+        "Confidence: high",
+        "Patient age: 60",
+        "Posterior circulation location: left_PCA",
+        "Posterior circulation location: left_PCA",
+        "Posterior circulation location: right_PCA"
+      ]
+    }
+  },
+  "narrative_summary": "Gemini report not generated: API key not configured."
+}
