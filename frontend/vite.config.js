@@ -3,8 +3,9 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const FRONTEND_ROOT = process.cwd()
+const FRONTEND_ROOT = path.dirname(fileURLToPath(import.meta.url))
 const BACKEND_ASSETS_DIR = path.resolve(FRONTEND_ROOT, '../backend/assets')
 const BACKEND_OUTPUT_DIR = path.resolve(FRONTEND_ROOT, '../backend/output')
 
