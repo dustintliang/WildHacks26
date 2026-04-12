@@ -20,7 +20,7 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.config import OUTPUT_DIR, TEMP_DIR
+from app.config import EICAB_LABEL_MAP, OUTPUT_DIR, TEMP_DIR
 from app.utils.gpu_check import check_gpu
 
 # ---------------------------------------------------------------------------
@@ -305,20 +305,34 @@ async def get_results(job_id: str):
 @app.get("/render/{job_id}", tags=["Analysis"])
 async def get_render(job_id: str):
     """
-    Return the overlay URL for the vessel mask NIfTI so the viewer
-    can display the segmentation as a colored overlay.
+    Return the overlay URL for the viewer: prefer the multi-label artery NIfTI
+    so each vessel can be colored distinctly (2D + 3D); fall back to binary mask.
     """
     job_dir = OUTPUT_DIR / job_id
     if not job_dir.exists():
         raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
 
-    # Find the vessel mask file in the output directory
+    labeled_files = sorted(job_dir.glob("*_labeled.nii*"))
+    if not labeled_files:
+        labeled_files = sorted(job_dir.glob("*labeled*.nii.gz"))
+    if labeled_files:
+        fn = labeled_files[0].name
+        return {
+            "overlay_url": f"/output/{job_id}/{fn}",
+            "overlay_kind": "artery_labels",
+            "label_map": {str(k): v for k, v in EICAB_LABEL_MAP.items()},
+        }
+
     mask_files = list(job_dir.glob("*vessel_mask*"))
     if not mask_files:
         raise HTTPException(status_code=404, detail="No vessel mask found for this job.")
 
     mask_filename = mask_files[0].name
-    return {"overlay_url": f"/output/{job_id}/{mask_filename}"}
+    return {
+        "overlay_url": f"/output/{job_id}/{mask_filename}",
+        "overlay_kind": "binary",
+        "label_map": None,
+    }
 
 
 # ---------------------------------------------------------------------------

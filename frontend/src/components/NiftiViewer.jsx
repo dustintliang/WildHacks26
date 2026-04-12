@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { Niivue } from '@niivue/niivue'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Niivue, cmapper } from '@niivue/niivue'
 
 const SLICE_VIEWS = [
   { label: 'Axial', value: 0 },
@@ -15,15 +15,57 @@ const MASK_COLORMAPS = [
   { label: 'Cool', value: 'cool' },
 ]
 
-export default function NiftiViewer({ originalFile, maskedBlob }) {
+/** RGB 0–255 per eICAB label id 1–11 (matches backend step6_render artery colors). */
+const ARTERY_LABEL_RGB = [
+  [51, 153, 255],
+  [0, 102, 204],
+  [0, 204, 102],
+  [0, 153, 51],
+  [255, 204, 0],
+  [204, 153, 0],
+  [204, 51, 204],
+  [153, 0, 153],
+  [255, 128, 0],
+  [102, 204, 204],
+  [51, 153, 153],
+]
+
+const ARTERY_LEGEND_NAMES = [
+  'L-ICA', 'R-ICA', 'L-MCA', 'R-MCA', 'L-ACA', 'R-ACA',
+  'L-PCA', 'R-PCA', 'Basilar', 'L-Vert', 'R-Vert',
+]
+
+function buildArteryLabelLut() {
+  const R = [0]
+  const G = [0]
+  const B = [0]
+  const labels = ['']
+  for (let i = 0; i < ARTERY_LABEL_RGB.length; i++) {
+    const [r, g, b] = ARTERY_LABEL_RGB[i]
+    R.push(r)
+    G.push(g)
+    B.push(b)
+    labels.push(ARTERY_LEGEND_NAMES[i] ?? `L${i + 1}`)
+  }
+  return cmapper.makeLabelLut({ R, G, B, labels })
+}
+
+const OVERLAY_LABEL = 'artery_labels.nii.gz'
+const OVERLAY_BINARY = 'mask.nii.gz'
+
+export default function NiftiViewer({ originalFile, maskedBlob, overlayMeta }) {
   const canvasRef = useRef(null)
   const nvRef = useRef(null)
   const [sliceType, setSliceType] = useState(3)
   const [maskColormap, setMaskColormap] = useState('hot')
-  const [maskOpacity, setMaskOpacity] = useState(0.6)
+  const [maskOpacity, setMaskOpacity] = useState(0.75)
   const [initialized, setInitialized] = useState(false)
   const [loadError, setLoadError] = useState(null)
   const [clipDepth, setClipDepth] = useState(-1)
+  const [volumesReady, setVolumesReady] = useState(0)
+
+  const arteryLabelLut = useMemo(() => buildArteryLabelLut(), [])
+  const isLabeledOverlay = overlayMeta?.kind === 'artery_labels'
 
   const is3D = sliceType === 4
 
@@ -64,28 +106,51 @@ export default function NiftiViewer({ originalFile, maskedBlob }) {
     if (maskedBlob) {
       const url = URL.createObjectURL(maskedBlob)
       objectUrls.push(url)
-      volumes.push({ url, name: 'mask.nii.gz', colormap: maskColormap, opacity: maskOpacity, cal_min: 0.1, cal_max: 1 })
+      if (isLabeledOverlay) {
+        volumes.push({
+          url,
+          name: OVERLAY_LABEL,
+          colormap: 'gray',
+          opacity: maskOpacity,
+          colormapLabel: arteryLabelLut,
+        })
+      } else {
+        volumes.push({
+          url,
+          name: OVERLAY_BINARY,
+          colormap: maskColormap,
+          opacity: maskOpacity,
+          cal_min: 0.1,
+          cal_max: 1,
+        })
+      }
     }
 
     if (volumes.length === 0) return
 
     nv.loadVolumes(volumes)
-      .then(() => { objectUrls.forEach((u) => URL.revokeObjectURL(u)) })
+      .then(() => {
+        objectUrls.forEach((u) => URL.revokeObjectURL(u))
+        setVolumesReady((n) => n + 1)
+      })
       .catch((e) => {
         objectUrls.forEach((u) => URL.revokeObjectURL(u))
         setLoadError(e?.message ?? 'Failed to load NIFTI file')
       })
-  }, [initialized, originalFile, maskedBlob]) // Load only when files change
+  }, [initialized, originalFile, maskedBlob])
 
   // Update colormap and opacity dynamically without reloading volumes
   useEffect(() => {
     const nv = nvRef.current
     if (!nv || nv.volumes.length === 0) return
 
-    const maskIndex = nv.volumes.findIndex(v => v.name === 'mask.nii.gz')
+    const maskIndex = nv.volumes.findIndex(v => v.name === OVERLAY_BINARY || v.name === OVERLAY_LABEL)
     if (maskIndex !== -1) {
       nv.setOpacity(maskIndex, maskOpacity)
-      nv.setColormap(nv.volumes[maskIndex].id, maskColormap)
+      // Only set colormap for binary mask, not labeled overlay
+      if (nv.volumes[maskIndex].name === OVERLAY_BINARY) {
+        nv.setColormap(nv.volumes[maskIndex].id, maskColormap)
+      }
       nv.updateGL()
     }
   }, [maskColormap, maskOpacity])
@@ -94,14 +159,20 @@ export default function NiftiViewer({ originalFile, maskedBlob }) {
     const nv = nvRef.current
     if (!nv) return
     nv.setSliceType(sliceType)
-    nv.setVolumeRenderIllumination(0.6)
-  }, [sliceType])
+    
+    if (nv.volumes.length === 0) return
+    if (sliceType === 4) {
+      nv.setVolumeRenderIllumination(0.6)
+    } else {
+      nv.setVolumeRenderIllumination(0)
+    }
+  }, [sliceType, volumesReady])
 
   useEffect(() => {
     const nv = nvRef.current
-    if (!nv || !is3D) return
+    if (!nv || !is3D || nv.volumes.length === 0) return
     nv.setClipPlane([clipDepth === -1 ? 2 : clipDepth, 270, 0])
-  }, [clipDepth, is3D])
+  }, [clipDepth, is3D, volumesReady])
 
   return (
     <div className="flex flex-col h-full bg-black">
@@ -126,16 +197,23 @@ export default function NiftiViewer({ originalFile, maskedBlob }) {
         {!is3D && (
           <>
             <div className="w-px h-4 bg-gray-700 mx-1" />
-            <label className="text-xs text-gray-500">Overlay:</label>
-            <select
-              value={maskColormap}
-              onChange={(e) => setMaskColormap(e.target.value)}
-              className="text-xs bg-gray-800 text-gray-300 rounded px-2 py-1 border border-gray-700"
-            >
-              {MASK_COLORMAPS.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
+            {!isLabeledOverlay && (
+              <>
+                <label className="text-xs text-gray-500">Overlay:</label>
+                <select
+                  value={maskColormap}
+                  onChange={(e) => setMaskColormap(e.target.value)}
+                  className="text-xs bg-gray-800 text-gray-300 rounded px-2 py-1 border border-gray-700"
+                >
+                  {MASK_COLORMAPS.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </>
+            )}
+            {isLabeledOverlay && (
+              <span className="text-xs text-gray-500">Per-artery colors (label overlay)</span>
+            )}
             <label className="text-xs text-gray-500">Opacity:</label>
             <input
               type="range" min={0} max={1} step={0.05} value={maskOpacity}
@@ -169,6 +247,24 @@ export default function NiftiViewer({ originalFile, maskedBlob }) {
       </div>
 
       {/* Legend */}
+      {maskedBlob && isLabeledOverlay && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1 px-3 py-1.5 bg-gray-950 border-b border-gray-800 shrink-0 max-h-24 overflow-y-auto">
+          <span className="text-[10px] text-gray-500 w-full sm:w-auto sm:mr-1">Arteries:</span>
+          {ARTERY_LEGEND_NAMES.map((name, i) => {
+            const [r, g, b] = ARTERY_LABEL_RGB[i]
+            return (
+              <div key={name} className="flex items-center gap-1">
+                <span
+                  className="w-2.5 h-2.5 rounded-sm shrink-0 border border-white/20"
+                  style={{ background: `rgb(${r},${g},${b})` }}
+                />
+                <span className="text-[10px] text-gray-400">{name}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       {!is3D && (
         <div className="flex gap-4 px-3 py-1.5 bg-gray-950 border-b border-gray-800 shrink-0">
           <div className="flex items-center gap-1.5">
@@ -177,8 +273,17 @@ export default function NiftiViewer({ originalFile, maskedBlob }) {
           </div>
           {maskedBlob && (
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-sm bg-orange-500" />
-              <span className="text-xs text-gray-500">Lesion Mask</span>
+              <span
+                className="w-3 h-3 rounded-sm"
+                style={{
+                  background: isLabeledOverlay
+                    ? 'linear-gradient(90deg, rgb(51,153,255), rgb(255,204,0), rgb(255,128,0))'
+                    : '#f97316',
+                }}
+              />
+              <span className="text-xs text-gray-500">
+                {isLabeledOverlay ? 'Labeled vessels' : 'Vessel mask'}
+              </span>
             </div>
           )}
         </div>

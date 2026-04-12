@@ -10,6 +10,7 @@ export default function App() {
   const [phase, setPhase] = useState('upload')
   const [originalFile, setOriginalFile] = useState(null)
   const [maskedBlob, setMaskedBlob] = useState(null)
+  const [overlayMeta, setOverlayMeta] = useState(null)
   const [segments, setSegments] = useState({})
   const [riskScores, setRiskScores] = useState({})
   const [narrativeSummary, setNarrativeSummary] = useState('')
@@ -20,6 +21,7 @@ export default function App() {
     setError(null)
     setOriginalFile(file)
     setMaskedBlob(null)
+    setOverlayMeta(null)
     setSegments({})
     setRiskScores({})
     setNarrativeSummary('')
@@ -85,6 +87,10 @@ export default function App() {
         const renderRes = await fetch(`${API_BASE}/render/${jobId}`)
         if (renderRes.ok) {
           const renderData = await renderRes.json()
+          setOverlayMeta({
+            kind: renderData.overlay_kind || 'binary',
+            labelMap: renderData.label_map || null,
+          })
           if (renderData.overlay_url) {
             const r = await fetch(`${API_BASE}${renderData.overlay_url}`)
             if (r.ok) setMaskedBlob(await r.blob())
@@ -106,6 +112,7 @@ export default function App() {
     setPhase('upload')
     setOriginalFile(null)
     setMaskedBlob(null)
+    setOverlayMeta(null)
     setSegments({})
     setRiskScores({})
     setNarrativeSummary('')
@@ -125,7 +132,7 @@ export default function App() {
         {(phase === 'processing' || phase === 'results') && (
           <div className="flex h-full">
             <div className="flex-[3] min-w-0">
-              <NiftiViewer originalFile={originalFile} maskedBlob={maskedBlob} />
+              <NiftiViewer originalFile={originalFile} maskedBlob={maskedBlob} overlayMeta={overlayMeta} />
             </div>
 
             <div className="flex-[2] min-w-0 border-l border-gray-800 overflow-y-auto">
