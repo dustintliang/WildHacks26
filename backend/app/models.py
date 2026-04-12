@@ -1,7 +1,7 @@
 """
 models.py — Pydantic response schemas for the analysis API.
 
-Defines the complete data model for the final GET /results/{job_id} response.
+Defines the complete data model for GET /analyze/{job_id} and GET /render/{job_id}.
 """
 
 from __future__ import annotations
@@ -72,6 +72,13 @@ class ArteryResult(BaseModel):
     aneurysm_candidates: list[AneurysmCandidate] = Field(default_factory=list)
     tortuosity: Optional[TortuosityResult] = None
     small_vessel_disease: Optional[SVDResult] = None
+    # Voxel-level data for GET /analyze binary_segments
+    voxel_count: int = 0
+    voxel_indices: list[list[int]] = Field(default_factory=list)
+    centerline_indices: list[list[int]] = Field(default_factory=list)
+    mean_radius_mm: float = 0.0
+    segment_length_mm: float = 0.0
+    analysis: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -115,10 +122,15 @@ class SliceImages(BaseModel):
 # Top-level analysis response
 # ---------------------------------------------------------------------------
 class AnalysisResponse(BaseModel):
-    """Full response schema for GET /results/{job_id}."""
+    """Full internal response stored in _jobs after pipeline completion."""
     job_id: str
     status: str = "complete"
     output_mask_path: str = ""
+    overlay_path: str = ""
+    mask_shape: list[int] = Field(default_factory=list)
+    mask_voxel_size: list[float] = Field(default_factory=list)
+    mask_affine: list[list[float]] = Field(default_factory=list)
+    vessel_voxel_count: int = 0
     arteries: dict[str, ArteryResult] = Field(default_factory=dict)
     risk_scores: dict[str, RiskScore] = Field(default_factory=dict)
     gemini_report: GeminiReport = Field(default_factory=GeminiReport)

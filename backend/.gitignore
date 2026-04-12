@@ -18,7 +18,6 @@ env/
 
 # Output and temp files
 output/
-!output/demo-job/
 temp/
 *.nii
 *.nii.gz
@@ -35,3 +34,5 @@ Thumbs.db
 
 # Docker
 *.log
+/external
+/output
