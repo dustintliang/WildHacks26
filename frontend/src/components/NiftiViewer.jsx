@@ -75,15 +75,26 @@ export default function NiftiViewer({ originalFile, maskedBlob }) {
         objectUrls.forEach((u) => URL.revokeObjectURL(u))
         setLoadError(e?.message ?? 'Failed to load NIFTI file')
       })
-  }, [initialized, originalFile, maskedBlob, maskColormap, maskOpacity])
+  }, [initialized, originalFile, maskedBlob]) // Load only when files change
+
+  // Update colormap and opacity dynamically without reloading volumes
+  useEffect(() => {
+    const nv = nvRef.current
+    if (!nv || nv.volumes.length === 0) return
+
+    const maskIndex = nv.volumes.findIndex(v => v.name === 'mask.nii.gz')
+    if (maskIndex !== -1) {
+      nv.setOpacity(maskIndex, maskOpacity)
+      nv.setColormap(nv.volumes[maskIndex].id, maskColormap)
+      nv.updateGL()
+    }
+  }, [maskColormap, maskOpacity])
 
   useEffect(() => {
     const nv = nvRef.current
     if (!nv) return
     nv.setSliceType(sliceType)
-    if (sliceType === 4) {
-      nv.setVolumeRenderIllumination(0.6)
-    }
+    nv.setVolumeRenderIllumination(0.6)
   }, [sliceType])
 
   useEffect(() => {
