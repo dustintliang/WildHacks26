@@ -29,26 +29,47 @@ export default function App() {
     setPhase('processing')
 
     try {
-      let res
-
       if (isDemo) {
-        // Fetch the demo NIfTI for the viewer while we start the analysis
-        try {
-          const niftiRes = await fetch(`${API_BASE}/demo-nifti`)
-          if (niftiRes.ok) {
-            const blob = await niftiRes.blob()
-            const demoFile = new File([blob], 'demo_scan.nii.gz', { type: 'application/octet-stream' })
-            setOriginalFile(demoFile)
-          }
-        } catch {
-          // Viewer will just be empty if this fails
+        // ── Demo mode: load results from local fixture files ──────────────
+        const STEP_LABELS = [
+          'Preprocessing', 'Vessel Segmentation', 'Artery Labeling',
+          'Centerline Extraction', 'Feature Analysis', 'Slice Rendering',
+          'AI Report', 'Risk Scoring',
+        ]
+        for (let i = 0; i < STEP_LABELS.length; i++) {
+          setProgress({ step: i + 1, total: 8, action: STEP_LABELS[i] })
+          await new Promise(r => setTimeout(r, 1250))
         }
-        res = await fetch(`${API_BASE}/analyze/demo`, { method: 'POST' })
-      } else {
-        const formData = new FormData()
-        formData.append('file', file)
-        res = await fetch(`${API_BASE}/analyze`, { method: 'POST', body: formData })
+
+        const [analysisRes, renderRes] = await Promise.all([
+          fetch('/fixtures/analyze_response.json'),
+          fetch('/fixtures/render_response.json'),
+        ])
+        const analysisData = await analysisRes.json()
+        const renderData = await renderRes.json()
+
+        setSegments(analysisData.binary_segments ?? {})
+        setRiskScores(analysisData.risk_scores ?? {})
+        setNarrativeSummary(analysisData.narrative_summary ?? '')
+        setAnalysis(analysisData.narrative_summary ?? '')
+
+        // Try to load overlay from backend if it's running (optional)
+        if (renderData.overlay_url) {
+          try {
+            const overlayRes = await fetch(`${API_BASE}${renderData.overlay_url}`)
+            if (overlayRes.ok) setMaskedBlob(await overlayRes.blob())
+          } catch { /* overlay is optional */ }
+        }
+
+        setProgress({ step: 8, total: 8, action: 'Analysis complete!' })
+        setPhase('results')
+        return
       }
+
+      // ── Real upload: call backend ─────────────────────────────────────
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch(`${API_BASE}/analyze`, { method: 'POST', body: formData })
 
       if (!res.ok) {
         const text = await res.text()
@@ -79,14 +100,10 @@ export default function App() {
 
       setProgress({ step: 8, total: 8, action: 'Analysis complete!' })
 
-      const finalRes = await fetch(`${API_BASE}/analyze/${jobId}`)
-      if (finalRes.ok) {
-        const finalData = await finalRes.json()
-        setSegments(finalData.binary_segments || {})
-        setRiskScores(finalData.risk_scores || {})
-        setNarrativeSummary(finalData.narrative_summary || '')
-        setAnalysis(finalData.narrative_summary || '')
-      }
+      setSegments(data.binary_segments ?? {})
+      setRiskScores(data.risk_scores ?? {})
+      setNarrativeSummary(data.narrative_summary ?? '')
+      setAnalysis(data.narrative_summary ?? '')
 
       // Fetch severity-coded overlay NIfTI from /render/{job_id} for NiiVue
       try {
