@@ -56,10 +56,9 @@ export default function App() {
           setOriginalFile(new File([blob], 'demo.nii.gz', { type: 'application/gzip' }))
         }
 
-        // Load color-coded vessel overlay
+        // Load vessel overlay (severity map: 1=normal, 2=mild, 3=severe, 4=aneurysm)
         if (overlayRes.ok) {
           setMaskedBlob(await overlayRes.blob())
-          setOverlayMeta({ kind: 'artery_labels' })
         }
 
         setSegments(analysisData.binary_segments ?? {})
@@ -120,7 +119,6 @@ export default function App() {
             const r = await fetch(`${API_BASE}${renderData.overlay_url}`)
             if (r.ok) {
               setMaskedBlob(await r.blob())
-              setOverlayMeta({ kind: 'artery_labels' })
             }
           }
         }

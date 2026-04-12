@@ -157,10 +157,12 @@ export default function NiftiViewer({
           colormapLabel: arteryLabelLut,
         })
       } else {
+        // Severity map: 0=bg, 1=normal, 2=mild, 3=severe, 4=aneurysm
+        // cal_min/max chosen so value=1 (normal vessels) lands in bright red
         volumes.push({
           url, name: OVERLAY_BINARY,
           colormap: 'hot', opacity: maskOpacity,
-          cal_min: 0.1, cal_max: 1,
+          cal_min: 0, cal_max: 2,
         })
       }
     }
