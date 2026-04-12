@@ -199,7 +199,6 @@ export default function App() {
 
         {(phase === 'processing' || phase === 'results') && (
           <div className="flex h-full">
-<<<<<<< HEAD
             <div className="flex-[3] min-w-0 flex flex-col">
               {/* View mode toggle bar */}
               {phase === 'results' && (
