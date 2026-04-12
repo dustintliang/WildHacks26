@@ -157,11 +157,12 @@ export default function NiftiViewer({
           colormapLabel: arteryLabelLut,
         })
       } else {
-        // Binary vessel mask (0=bg, 1=vessel) — cal range maps 1 to bright red
+        // Binary vessel mask (0=bg, 1=vessel)
+        // hot colormap hits red at ~33%, so cal_max=3 puts value=1 in the red zone
         volumes.push({
           url, name: OVERLAY_BINARY,
           colormap: 'hot', opacity: maskOpacity,
-          cal_min: 0, cal_max: 1,
+          cal_min: 0, cal_max: 3,
         })
       }
     }
