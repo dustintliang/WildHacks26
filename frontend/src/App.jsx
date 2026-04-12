@@ -55,11 +55,12 @@ export default function App() {
       const initialData = await res.json()
       const jobId = initialData.job_id
 
-      // Poll GET /results/{job_id} until complete
+      // Poll GET /analyze/{job_id} until complete
+      // (backend POST response confirms: "Poll GET /analyze/{job_id}")
       let data
       while (true) {
         await new Promise(resolve => setTimeout(resolve, 2000))
-        const pollRes = await fetch(`${API_BASE}/results/${jobId}`)
+        const pollRes = await fetch(`${API_BASE}/analyze/${jobId}`)
         if (!pollRes.ok) throw new Error(`Polling failed: ${pollRes.status}`)
         data = await pollRes.json()
 
@@ -85,8 +86,10 @@ export default function App() {
         const renderRes = await fetch(`${API_BASE}/render/${jobId}`)
         if (renderRes.ok) {
           const renderData = await renderRes.json()
-          if (renderData.overlay_url) {
-            const r = await fetch(`${API_BASE}${renderData.overlay_url}`)
+          // Try overlay first, fall back to mask_url
+          const niftiPath = renderData.overlay_url || renderData.mask_url
+          if (niftiPath) {
+            const r = await fetch(`${API_BASE}${niftiPath}`)
             if (r.ok) setMaskedBlob(await r.blob())
           }
         }
