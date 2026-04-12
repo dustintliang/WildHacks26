@@ -1,0 +1,1 @@
+{"job_id":"5b45b615-f5ea-496c-999f-1ee67641e2da","status":"processing","message":"Analysis started for '1.nii'. Poll GET /analyze/5b45b615-f5ea-496c-999f-1ee67641e2da for per-artery findings or GET /render/5b45b615-f5ea-496c-999f-1ee67641e2da for mask metadata."}
