@@ -175,9 +175,10 @@ function VesselsTab({ arteryEntries }) {
 
   const withFindings = arteryEntries.filter(([, a]) =>
     a.visible && (
-      a.findings?.stenosis?.length  > 0 ||
-      a.findings?.aneurysms?.length > 0 ||
-      a.findings?.tortuosity?.flagged
+      (a.findings?.stenosis?.length > 0 || (a.stenosis_candidates && a.stenosis_candidates.length > 0)) ||
+      (a.findings?.aneurysms?.length > 0 || (a.aneurysm_candidates && a.aneurysm_candidates.length > 0)) ||
+      a.findings?.tortuosity?.flagged ||
+      a.tortuosity?.flagged
     )
   )
 
@@ -231,7 +232,9 @@ function VesselsTab({ arteryEntries }) {
 
 function ArteryAccordion({ name, artery, isOpen, onToggle }) {
   const { findings = {}, analysis = '', mean_radius_mm, segment_length_mm } = artery
-  const { stenosis = [], aneurysms = [], tortuosity } = findings
+  const stenosis = findings.stenosis ?? artery.stenosis_candidates ?? []
+  const aneurysms = findings.aneurysms ?? artery.aneurysm_candidates ?? []
+  const tortuosity = findings.tortuosity ?? artery.tortuosity
 
   return (
     <div className="rounded-xl border border-gray-700 overflow-hidden">

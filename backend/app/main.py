@@ -181,16 +181,18 @@ async def analyze_demo():
     If a cached result exists, simulates a 10-second progressive pipeline
     so the progress bar animates through all 8 steps.
     """
-    demo_path = (Path(__file__).parent.parent.parent / "dataset" / "1.nii").resolve()
+    # Use the specific pre-computed directory requested: test-job-89457f37
+    job_id = "test-job-89457f37"
+    demo_path = OUTPUT_DIR / job_id / f"{job_id}_preprocessed.nii.gz"
+    
     if not demo_path.exists():
         raise HTTPException(
             status_code=404,
             detail=f"Demo dataset not found at {demo_path}",
         )
 
-    job_id = "demo-job"
-    logger.info(f"Demo analysis requested. checking for cache...")
-
+    logger.info(f"Demo analysis requested for {job_id}. Checking for cache at {OUTPUT_DIR / job_id}...")
+    
     # Check for cached result
     cache_path = OUTPUT_DIR / job_id / "result.json"
     if cache_path.exists():
@@ -207,14 +209,15 @@ async def analyze_demo():
 
             # Launch simulated progressive pipeline in background
             asyncio.create_task(_simulate_demo_progress(job_id, cached_result))
+            
+            logger.info(f"Demo started — simulating 10s progressive pipeline from cache for {job_id}.")
 
-            logger.info("Demo started — simulating 10s progressive pipeline from cache.")
             return JSONResponse(
                 status_code=202,
                 content={
                     "job_id": job_id,
                     "status": "processing",
-                    "message": "Demo analysis started. Poll GET /results/demo-job for results.",
+                    "message": f"Demo analysis started. Poll GET /results/{job_id} for results.",
                 },
             )
         except Exception as exc:
@@ -248,11 +251,12 @@ async def analyze_demo():
 # ---------------------------------------------------------------------------
 @app.get("/demo-nifti", tags=["Analysis"])
 async def get_demo_nifti():
-    """Return the raw demo 1.nii file for immediate viewer loading."""
-    demo_path = (Path(__file__).parent.parent.parent / "dataset" / "1.nii").resolve()
+    """Return the raw demo NIfTI file for immediate viewer loading."""
+    job_id = "test-job-89457f37"
+    demo_path = OUTPUT_DIR / job_id / f"{job_id}_preprocessed.nii.gz"
     if not demo_path.exists():
         raise HTTPException(status_code=404, detail="Demo dataset not found.")
-    return FileResponse(str(demo_path), media_type="application/octet-stream", filename="1.nii")
+    return FileResponse(str(demo_path), media_type="application/octet-stream", filename="demo.nii.gz")
 
 
 # ---------------------------------------------------------------------------

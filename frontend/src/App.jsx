@@ -13,12 +13,18 @@ export default function App() {
   const [analysis, setAnalysis] = useState('')
   const [error, setError] = useState(null)
   const [progress, setProgress] = useState({ step: 0, total: 8, action: 'Starting...' })
+  const [segments, setSegments] = useState({})
+  const [riskScores, setRiskScores] = useState({})
+  const [narrativeSummary, setNarrativeSummary] = useState('')
 
   const handleSubmit = async (file, isDemo = false) => {
     setError(null)
     setOriginalFile(file)
     setMaskedBlob(null)
     setAnalysis('')
+    setSegments({})
+    setRiskScores({})
+    setNarrativeSummary('')
     setProgress({ step: 0, total: 8, action: 'Connecting to server...' })
     setPhase('processing')
 
@@ -31,7 +37,7 @@ export default function App() {
           const niftiRes = await fetch(`${API_BASE}/demo-nifti`)
           if (niftiRes.ok) {
             const blob = await niftiRes.blob()
-            const demoFile = new File([blob], '1.nii', { type: 'application/octet-stream' })
+            const demoFile = new File([blob], 'demo_scan.nii.gz', { type: 'application/octet-stream' })
             setOriginalFile(demoFile)
           }
         } catch {
@@ -73,20 +79,28 @@ export default function App() {
 
       setProgress({ step: 8, total: 8, action: 'Analysis complete!' })
 
-      let blob = null
-      if (data.output_mask_path) {
-        const maskUrl = data.output_mask_path.startsWith('/')
-          ? `${API_BASE}${data.output_mask_path}`
-          : `${API_BASE}/output/${data.output_mask_path}`
-        const r = await fetch(maskUrl)
-        if (r.ok) blob = await r.blob()
+      const finalRes = await fetch(`${API_BASE}/analyze/${jobId}`)
+      if (finalRes.ok) {
+        const finalData = await finalRes.json()
+        setSegments(finalData.binary_segments || {})
+        setRiskScores(finalData.risk_scores || {})
+        setNarrativeSummary(finalData.narrative_summary || '')
+        setAnalysis(finalData.narrative_summary || '')
       }
 
-      setMaskedBlob(blob)
-      const narrative = data?.narrative_summary
-        || data?.gemini_report?.narrative_summary
-        || 'AI narrative not available.'
-      setAnalysis(narrative)
+      // Fetch severity-coded overlay NIfTI from /render/{job_id} for NiiVue
+      try {
+        const renderRes = await fetch(`${API_BASE}/render/${jobId}`)
+        if (renderRes.ok) {
+          const renderData = await renderRes.json()
+          if (renderData.overlay_url) {
+            const r = await fetch(`${API_BASE}${renderData.overlay_url}`)
+            if (r.ok) setMaskedBlob(await r.blob())
+          }
+        }
+      } catch (e) {
+        console.warn('Overlay load failed:', e)
+      }
       setPhase('results')
     } catch (e) {
       console.error(e)
@@ -100,6 +114,9 @@ export default function App() {
     setOriginalFile(null)
     setMaskedBlob(null)
     setAnalysis('')
+    setSegments({})
+    setRiskScores({})
+    setNarrativeSummary('')
     setError(null)
     setProgress({ step: 0, total: 8, action: 'Starting...' })
   }
@@ -123,7 +140,12 @@ export default function App() {
               {phase === 'processing' ? (
                 <ProcessingPanel progress={progress} />
               ) : (
-                <AnalysisPanel analysis={analysis} onReset={reset} />
+                <AnalysisPanel 
+                  segments={segments}
+                  riskScores={riskScores}
+                  narrativeSummary={narrativeSummary}
+                  onReset={reset} 
+                />
               )}
             </div>
           </div>
