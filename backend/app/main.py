@@ -180,7 +180,7 @@ async def analyze_demo():
     If a cached result exists, simulates a 10-second progressive pipeline
     so the progress bar animates through all 8 steps.
     """
-    demo_path = Path("../dataset/1.nii").resolve()
+    demo_path = (Path(__file__).parent.parent.parent / "dataset" / "1.nii").resolve()
     if not demo_path.exists():
         raise HTTPException(
             status_code=404,
@@ -248,7 +248,7 @@ async def analyze_demo():
 @app.get("/demo-nifti", tags=["Analysis"])
 async def get_demo_nifti():
     """Return the raw demo 1.nii file for immediate viewer loading."""
-    demo_path = Path("../dataset/1.nii").resolve()
+    demo_path = (Path(__file__).parent.parent.parent / "dataset" / "1.nii").resolve()
     if not demo_path.exists():
         raise HTTPException(status_code=404, detail="Demo dataset not found.")
     return FileResponse(str(demo_path), media_type="application/octet-stream", filename="1.nii")
