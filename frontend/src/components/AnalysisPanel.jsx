@@ -18,7 +18,7 @@ export default function AnalysisPanel({ segments, riskScores, narrativeSummary, 
         <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="text-sm font-semibold">Analysis Results</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Powered by Gemini</p>
+            <p className="text-xs text-gray-500 mt-0.5">Cerebrovascular Pipeline</p>
           </div>
           <button
             onClick={onReset}
@@ -45,7 +45,7 @@ export default function AnalysisPanel({ segments, riskScores, narrativeSummary, 
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-4">
-        {tab === 'summary' && <SummaryTab text={narrativeSummary} />}
+        {tab === 'summary' && <SummaryTab text={narrativeSummary} segments={segments} riskScores={riskScores} />}
         {tab === 'vessels' && <VesselsTab arteryEntries={arteryEntries} />}
         {tab === 'risk'    && <RiskTab riskScores={riskScores} />}
       </div>
@@ -61,13 +61,92 @@ export default function AnalysisPanel({ segments, riskScores, narrativeSummary, 
 
 // ─── Summary Tab ──────────────────────────────────────────────────────────────
 
-function SummaryTab({ text }) {
-  const sections = parseMarkdown(text)
+function SummaryTab({ text, segments, riskScores }) {
+  // If narrative summary is a fallback/error message, show a generated one instead
+  const isFallback = !text || text.toLowerCase().includes('not generated') || text.toLowerCase().includes('api key')
+
+  const arteryEntries = Object.entries(segments)
+  const visibleArteries = arteryEntries.filter(([, a]) => a.visible)
+
+  // Collect all findings for the auto-generated summary
+  const allFindings = visibleArteries.flatMap(([name, a]) => {
+    const results = []
+    const stenoses = a.findings?.stenosis ?? []
+    const aneurysms = a.findings?.aneurysms ?? []
+    const tortuosity = a.findings?.tortuosity
+
+    stenoses.forEach(s => results.push({ type: 'stenosis', artery: name, ...s }))
+    aneurysms.forEach(an => results.push({ type: 'aneurysm', artery: name, ...an }))
+    if (tortuosity?.flagged) results.push({ type: 'tortuosity', artery: name, ...tortuosity })
+    return results
+  })
+
+  const highRisks = Object.entries(riskScores).filter(([, r]) => r.severity === 'high')
+
   return (
     <div className="space-y-4">
-      {sections.length > 0
-        ? sections.map((s, i) => <NarrativeSection key={i} {...s} />)
-        : <PlainText text={text} />}
+      {/* Narrative from backend */}
+      {!isFallback ? (
+        parseMarkdown(text).length > 0
+          ? parseMarkdown(text).map((s, i) => <NarrativeSection key={i} {...s} />)
+          : <PlainText text={text} />
+      ) : (
+        /* Auto-generated summary when API key not configured */
+        <>
+          {highRisks.length > 0 && (
+            <div className="rounded-xl border border-red-900/50 bg-red-950/20 px-4 py-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-red-400 mb-2">High Risk Findings</h3>
+              <ul className="space-y-1.5">
+                {highRisks.map(([key, r]) => (
+                  <li key={key} className="text-sm text-gray-200 leading-relaxed">
+                    <span className="text-red-400 font-medium">{key.replace(/_/g, ' ')}</span>
+                    {' '}— score {Math.round(r.score)}/100
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="rounded-xl border border-gray-700 bg-gray-900/50 px-4 py-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Vessels Analyzed</h3>
+            <p className="text-sm text-gray-200 leading-relaxed">
+              {visibleArteries.length} of {arteryEntries.length} vessels visible.
+              {' '}{visibleArteries.map(([n]) => n.replace(/_/g, ' ')).join(', ')}.
+            </p>
+          </div>
+
+          {allFindings.length > 0 ? (
+            <div className="rounded-xl border border-yellow-900/50 bg-yellow-950/20 px-4 py-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-yellow-400 mb-2">Detected Findings</h3>
+              <ul className="space-y-1.5">
+                {allFindings.map((f, i) => (
+                  <li key={i} className="text-sm text-gray-300 leading-relaxed">
+                    {f.type === 'stenosis' && (
+                      <><span className="text-yellow-400 font-medium">{f.artery.replace(/_/g, ' ')}</span>: stenosis {f.stenosis_percent?.toFixed(1)}% ({f.severity})</>
+                    )}
+                    {f.type === 'aneurysm' && (
+                      <><span className="text-orange-400 font-medium">{f.artery.replace(/_/g, ' ')}</span>: aneurysm candidate — size ratio {f.size_ratio?.toFixed(2)}, aspect {f.aspect_ratio?.toFixed(2)}, confidence {f.confidence ?? 'unknown'}</>
+                    )}
+                    {f.type === 'tortuosity' && (
+                      <><span className="text-cyan-400 font-medium">{f.artery.replace(/_/g, ' ')}</span>: elevated tortuosity (DF={f.distance_factor?.toFixed(2)})</>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-gray-800 bg-gray-900/40 px-4 py-3">
+              <p className="text-sm text-gray-400">No significant findings detected in visible vessels.</p>
+            </div>
+          )}
+
+          <div className="rounded-xl border border-gray-800 bg-gray-900/30 px-3 py-2.5">
+            <p className="text-xs text-gray-600 italic">
+              Narrative AI summary unavailable — configure a Gemini API key for full reports.
+            </p>
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -155,7 +234,7 @@ function VesselsTab({ arteryEntries }) {
 }
 
 function ArteryAccordion({ name, artery, isOpen, onToggle }) {
-  const { findings = {}, analysis = '', mean_radius_mm } = artery
+  const { findings = {}, analysis = '', mean_radius_mm, segment_length_mm } = artery
   const { stenosis = [], aneurysms = [], tortuosity } = findings
 
   return (
@@ -192,10 +271,21 @@ function ArteryAccordion({ name, artery, isOpen, onToggle }) {
 
       {isOpen && (
         <div className="px-4 py-3 bg-gray-900/50 space-y-3 border-t border-gray-800">
-          {mean_radius_mm != null && (
-            <p className="text-xs text-gray-500">
-              Mean radius: <span className="text-gray-300 font-medium">{mean_radius_mm.toFixed(2)} mm</span>
-            </p>
+
+          {/* Vessel metrics row */}
+          {(mean_radius_mm != null || segment_length_mm != null) && (
+            <div className="flex gap-4 flex-wrap">
+              {mean_radius_mm != null && mean_radius_mm > 0 && (
+                <p className="text-xs text-gray-500">
+                  Mean radius: <span className="text-gray-300 font-medium">{mean_radius_mm.toFixed(2)} mm</span>
+                </p>
+              )}
+              {segment_length_mm != null && segment_length_mm > 0 && (
+                <p className="text-xs text-gray-500">
+                  Length: <span className="text-gray-300 font-medium">{segment_length_mm.toFixed(1)} mm</span>
+                </p>
+              )}
+            </div>
           )}
 
           {stenosis.length > 0 && (
@@ -240,11 +330,29 @@ function ArteryAccordion({ name, artery, isOpen, onToggle }) {
           {aneurysms.length > 0 && (
             <div>
               <p className="text-xs font-semibold text-orange-400 mb-2">Aneurysm Candidates</p>
-              <div className="space-y-1.5">
+              <div className="space-y-3">
                 {aneurysms.map((a, i) => (
-                  <div key={i} className="flex gap-4 text-xs text-gray-400">
-                    {a.size_ratio   != null && <span>Size ratio <span className="text-gray-200">{a.size_ratio.toFixed(2)}</span></span>}
-                    {a.aspect_ratio != null && <span>Aspect <span className="text-gray-200">{a.aspect_ratio.toFixed(2)}</span></span>}
+                  <div key={i} className="space-y-1.5">
+                    <div className="flex gap-4 flex-wrap text-xs text-gray-400">
+                      {a.size_ratio   != null && <span>Size ratio <span className="text-gray-200">{a.size_ratio.toFixed(2)}</span></span>}
+                      {a.aspect_ratio != null && <span>Aspect <span className="text-gray-200">{a.aspect_ratio.toFixed(2)}</span></span>}
+                      {a.deviation_score != null && <span>Dev. score <span className="text-gray-200">{a.deviation_score.toFixed(2)}</span></span>}
+                      {a.confidence   != null && (
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                          a.confidence === 'high'     ? 'bg-red-900/50 text-red-400' :
+                          a.confidence === 'moderate' ? 'bg-orange-900/50 text-orange-400' :
+                                                        'bg-gray-800 text-gray-400'
+                        }`}>
+                          {a.confidence} confidence
+                        </span>
+                      )}
+                    </div>
+                    {/* MNI coordinates */}
+                    {a.mni_coords?.length === 3 && (
+                      <p className="text-[10px] text-gray-600 font-mono">
+                        MNI [{a.mni_coords.map(v => v.toFixed(1)).join(', ')}]
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -281,9 +389,16 @@ function ArteryAccordion({ name, artery, isOpen, onToggle }) {
 function RiskTab({ riskScores }) {
   const entries = Object.entries(riskScores)
   if (entries.length === 0) return <Empty text="No risk scores available." />
+
+  // Sort: high → moderate → low
+  const order = { high: 0, moderate: 1, low: 2 }
+  const sorted = [...entries].sort(
+    ([, a], [, b]) => (order[a.severity] ?? 3) - (order[b.severity] ?? 3)
+  )
+
   return (
     <div className="space-y-4">
-      {entries.map(([key, rs]) => <RiskCard key={key} name={key} data={rs} />)}
+      {sorted.map(([key, rs]) => <RiskCard key={key} name={key} data={rs} />)}
     </div>
   )
 }
