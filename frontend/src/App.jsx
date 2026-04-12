@@ -53,7 +53,7 @@ export default function App() {
     try {
       if (isDemo) {
         // ── Demo mode: use real pipeline artifacts from backend/output ──────
-        const analyzePromise = fetch(DEMO_ANALYZE_URL).then(r => {
+        const analyzePromise = fetch(`${DEMO_ANALYZE_URL}?t=${Date.now()}`).then(r => {
           if (!r.ok) throw new Error(`Analyze fetch ${r.status}`)
           return r.json()
         })

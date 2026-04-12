@@ -10,7 +10,7 @@ comm @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_comm_
 cryptography==46.0.7
 debugpy @ file:///Users/runner/miniforge3/conda-bld/bld/rattler-build_debugpy_1769744999/work
 decorator @ file:///home/conda/feedstock_root/build_artifacts/decorator_1740384970518/work
-dotenv==0.9.9
+# dotenv==0.9.9 (Removed in favor of python-dotenv)
 exceptiongroup @ file:///home/conda/feedstock_root/build_artifacts/exceptiongroup_1763918002538/work
 executing @ file:///home/conda/feedstock_root/build_artifacts/executing_1756729339227/work
 fastapi==0.135.3
@@ -19,7 +19,8 @@ google-api-core==2.30.3
 google-api-python-client==2.194.0
 google-auth==2.49.2
 google-auth-httplib2==0.3.1
-google-generativeai==0.8.6
+google-genai==1.72.0
+# google-generativeai==0.8.6 (Replaced by google-genai)
 googleapis-common-protos==1.74.0
 grpcio==1.80.0
 grpcio-status==1.71.2
