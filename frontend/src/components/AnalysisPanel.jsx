@@ -225,9 +225,9 @@ function ArteryAccordion({ name, artery, isOpen, onToggle }) {
                         {s.severity}
                       </span>
                     </div>
-                    {s.r_min_mm != null && (
+                    {s.r_min != null && (
                       <p className="text-xs text-gray-500">
-                        r_min {s.r_min_mm.toFixed(2)} mm · r_ref {(s.r_reference_mm ?? 0).toFixed(2)} mm
+                        r_min {s.r_min.toFixed(2)} mm · r_ref {(s.r_reference ?? 0).toFixed(2)} mm
                         {s.affected_segment_length_mm != null && ` · ${s.affected_segment_length_mm.toFixed(1)} mm segment`}
                       </p>
                     )}
