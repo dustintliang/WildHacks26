@@ -62,21 +62,19 @@ export default function AnalysisPanel({ segments, riskScores, narrativeSummary, 
 // ─── Summary Tab ──────────────────────────────────────────────────────────────
 
 function SummaryTab({ text, segments, riskScores }) {
-  // If narrative summary is a fallback/error message, show a generated one instead
   const isFallback = !text || text.toLowerCase().includes('not generated') || text.toLowerCase().includes('api key')
 
   const arteryEntries = Object.entries(segments)
   const visibleArteries = arteryEntries.filter(([, a]) => a.visible)
 
-  // Collect all findings for the auto-generated summary
   const allFindings = visibleArteries.flatMap(([name, a]) => {
     const results = []
-    const stenoses = a.findings?.stenosis ?? []
-    const aneurysms = a.findings?.aneurysms ?? []
+    const stenoses   = a.findings?.stenosis   ?? []
+    const aneurysms  = a.findings?.aneurysms  ?? []
     const tortuosity = a.findings?.tortuosity
 
-    stenoses.forEach(s => results.push({ type: 'stenosis', artery: name, ...s }))
-    aneurysms.forEach(an => results.push({ type: 'aneurysm', artery: name, ...an }))
+    stenoses.forEach(s   => results.push({ type: 'stenosis',   artery: name, ...s }))
+    aneurysms.forEach(an => results.push({ type: 'aneurysm',   artery: name, ...an }))
     if (tortuosity?.flagged) results.push({ type: 'tortuosity', artery: name, ...tortuosity })
     return results
   })
@@ -85,13 +83,11 @@ function SummaryTab({ text, segments, riskScores }) {
 
   return (
     <div className="space-y-4">
-      {/* Narrative from backend */}
       {!isFallback ? (
         parseMarkdown(text).length > 0
           ? parseMarkdown(text).map((s, i) => <NarrativeSection key={i} {...s} />)
           : <PlainText text={text} />
       ) : (
-        /* Auto-generated summary when API key not configured */
         <>
           {highRisks.length > 0 && (
             <div className="rounded-xl border border-red-900/50 bg-red-950/20 px-4 py-3">
@@ -125,7 +121,7 @@ function SummaryTab({ text, segments, riskScores }) {
                       <><span className="text-yellow-400 font-medium">{f.artery.replace(/_/g, ' ')}</span>: stenosis {f.stenosis_percent?.toFixed(1)}% ({f.severity})</>
                     )}
                     {f.type === 'aneurysm' && (
-                      <><span className="text-orange-400 font-medium">{f.artery.replace(/_/g, ' ')}</span>: aneurysm candidate — size ratio {f.size_ratio?.toFixed(2)}, aspect {f.aspect_ratio?.toFixed(2)}, confidence {f.confidence ?? 'unknown'}</>
+                      <><span className="text-orange-400 font-medium">{f.artery.replace(/_/g, ' ')}</span>: aneurysm candidate — size ratio {f.size_ratio?.toFixed(2)}, aspect {f.aspect_ratio?.toFixed(2)}, {f.confidence ?? 'unknown'} confidence</>
                     )}
                     {f.type === 'tortuosity' && (
                       <><span className="text-cyan-400 font-medium">{f.artery.replace(/_/g, ' ')}</span>: elevated tortuosity (DF={f.distance_factor?.toFixed(2)})</>
@@ -179,7 +175,7 @@ function VesselsTab({ arteryEntries }) {
 
   const withFindings = arteryEntries.filter(([, a]) =>
     a.visible && (
-      a.findings?.stenosis?.length > 0 ||
+      a.findings?.stenosis?.length  > 0 ||
       a.findings?.aneurysms?.length > 0 ||
       a.findings?.tortuosity?.flagged
     )
@@ -253,7 +249,7 @@ function ArteryAccordion({ name, artery, isOpen, onToggle }) {
             )}
             {aneurysms.length > 0 && (
               <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-900/50 text-orange-400">
-                {aneurysms.length} aneurysm
+                {aneurysms.length} aneurysm{aneurysms.length > 1 ? 's' : ''}
               </span>
             )}
             {tortuosity?.flagged && (
@@ -272,7 +268,7 @@ function ArteryAccordion({ name, artery, isOpen, onToggle }) {
       {isOpen && (
         <div className="px-4 py-3 bg-gray-900/50 space-y-3 border-t border-gray-800">
 
-          {/* Vessel metrics row */}
+          {/* Vessel metrics */}
           {(mean_radius_mm != null || segment_length_mm != null) && (
             <div className="flex gap-4 flex-wrap">
               {mean_radius_mm != null && mean_radius_mm > 0 && (
@@ -288,10 +284,11 @@ function ArteryAccordion({ name, artery, isOpen, onToggle }) {
             </div>
           )}
 
+          {/* Stenosis — backend fields: r_min, r_reference, mni_coordinates */}
           {stenosis.length > 0 && (
             <div>
               <p className="text-xs font-semibold text-yellow-400 mb-2">Stenosis</p>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {stenosis.map((s, i) => (
                   <div key={i} className="space-y-1">
                     <div className="flex items-center gap-2.5">
@@ -310,15 +307,24 @@ function ArteryAccordion({ name, artery, isOpen, onToggle }) {
                       <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
                         s.severity === 'severe'   ? 'bg-red-900/50 text-red-400' :
                         s.severity === 'moderate' ? 'bg-orange-900/50 text-orange-400' :
+                        s.severity === 'normal'   ? 'bg-green-900/50 text-green-400' :
                                                     'bg-gray-800 text-gray-400'
                       }`}>
                         {s.severity}
                       </span>
                     </div>
+                    {/* r_min / r_reference (backend field names — no _mm suffix) */}
                     {s.r_min != null && (
                       <p className="text-xs text-gray-500">
-                        r_min {s.r_min.toFixed(2)} mm · r_ref {(s.r_reference ?? 0).toFixed(2)} mm
+                        r_min {s.r_min.toFixed(2)} mm
+                        {s.r_reference != null && ` · r_ref ${s.r_reference.toFixed(2)} mm`}
                         {s.affected_segment_length_mm != null && ` · ${s.affected_segment_length_mm.toFixed(1)} mm segment`}
+                      </p>
+                    )}
+                    {/* mni_coordinates for stenosis (backend key: mni_coordinates, not mni_coords) */}
+                    {s.mni_coordinates?.length === 3 && (
+                      <p className="text-[10px] text-gray-600 font-mono">
+                        MNI [{s.mni_coordinates.map(v => v.toFixed(1)).join(', ')}]
                       </p>
                     )}
                   </div>
@@ -327,17 +333,18 @@ function ArteryAccordion({ name, artery, isOpen, onToggle }) {
             </div>
           )}
 
+          {/* Aneurysms — backend fields: mni_coords (not mni_coordinates) */}
           {aneurysms.length > 0 && (
             <div>
               <p className="text-xs font-semibold text-orange-400 mb-2">Aneurysm Candidates</p>
               <div className="space-y-3">
                 {aneurysms.map((a, i) => (
-                  <div key={i} className="space-y-1.5">
-                    <div className="flex gap-4 flex-wrap text-xs text-gray-400">
-                      {a.size_ratio   != null && <span>Size ratio <span className="text-gray-200">{a.size_ratio.toFixed(2)}</span></span>}
-                      {a.aspect_ratio != null && <span>Aspect <span className="text-gray-200">{a.aspect_ratio.toFixed(2)}</span></span>}
+                  <div key={i} className="space-y-1.5 pb-2 border-b border-gray-800 last:border-0 last:pb-0">
+                    <div className="flex gap-3 flex-wrap items-center text-xs text-gray-400">
+                      {a.size_ratio      != null && <span>Size ratio <span className="text-gray-200">{a.size_ratio.toFixed(2)}</span></span>}
+                      {a.aspect_ratio    != null && <span>Aspect <span className="text-gray-200">{a.aspect_ratio.toFixed(2)}</span></span>}
                       {a.deviation_score != null && <span>Dev. score <span className="text-gray-200">{a.deviation_score.toFixed(2)}</span></span>}
-                      {a.confidence   != null && (
+                      {a.confidence != null && (
                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
                           a.confidence === 'high'     ? 'bg-red-900/50 text-red-400' :
                           a.confidence === 'moderate' ? 'bg-orange-900/50 text-orange-400' :
@@ -347,7 +354,7 @@ function ArteryAccordion({ name, artery, isOpen, onToggle }) {
                         </span>
                       )}
                     </div>
-                    {/* MNI coordinates */}
+                    {/* mni_coords for aneurysms (backend key: mni_coords) */}
                     {a.mni_coords?.length === 3 && (
                       <p className="text-[10px] text-gray-600 font-mono">
                         MNI [{a.mni_coords.map(v => v.toFixed(1)).join(', ')}]
@@ -359,6 +366,7 @@ function ArteryAccordion({ name, artery, isOpen, onToggle }) {
             </div>
           )}
 
+          {/* Tortuosity */}
           {tortuosity?.flagged && (
             <div>
               <p className="text-xs font-semibold text-cyan-400 mb-1">Tortuosity Flagged</p>
@@ -373,6 +381,7 @@ function ArteryAccordion({ name, artery, isOpen, onToggle }) {
             </div>
           )}
 
+          {/* AI analysis string */}
           {analysis && (
             <div className="pt-2 border-t border-gray-800">
               <p className="text-xs text-gray-400 leading-relaxed">{analysis}</p>
@@ -390,7 +399,6 @@ function RiskTab({ riskScores }) {
   const entries = Object.entries(riskScores)
   if (entries.length === 0) return <Empty text="No risk scores available." />
 
-  // Sort: high → moderate → low
   const order = { high: 0, moderate: 1, low: 2 }
   const sorted = [...entries].sort(
     ([, a], [, b]) => (order[a.severity] ?? 3) - (order[b.severity] ?? 3)
