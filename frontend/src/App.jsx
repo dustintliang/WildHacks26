@@ -58,15 +58,24 @@ export default function App() {
           if (!r.ok) throw new Error(`Analyze fetch ${r.status}`)
           return r.json()
         })
-        const mriPromise = fetch('/backend-assets/1.nii')
-          .then(r => {
-            if (!r.ok) throw new Error(`MRI fetch ${r.status}`)
-            return r.blob()
-          })
-          .catch(e => {
-            console.warn('Demo MRI base load skipped:', e)
-            return null
-          })
+        const mriPromise = new Promise((resolve) => {
+          const xhr = new XMLHttpRequest()
+          xhr.open('GET', `/demo/1.nii.gz?t=${Date.now()}`, true)
+          xhr.responseType = 'arraybuffer'
+          xhr.onload = () => {
+            if (xhr.status === 200 && xhr.response?.byteLength > 0) {
+              resolve(new Blob([xhr.response], { type: 'application/octet-stream' }))
+            } else {
+              console.warn('Demo MRI base load skipped: bad status', xhr.status)
+              resolve(null)
+            }
+          }
+          xhr.onerror = () => {
+            console.warn('Demo MRI base load skipped: XHR error')
+            resolve(null)
+          }
+          xhr.send()
+        })
         const overlayPromise = fetch(`${DEMO_OUTPUT_BASE}/${DEMO_JOB_ID}_overlay.nii.gz`)
           .then(r => {
             if (!r.ok) throw new Error(`Overlay fetch ${r.status}`)
@@ -91,7 +100,7 @@ export default function App() {
         await delay(300)
 
         if (mriBlob && mriBlob.size > 0) {
-          const mriFile = new File([mriBlob], '1.nii', { type: 'application/octet-stream' })
+          const mriFile = new File([mriBlob], '1.nii.gz', { type: 'application/octet-stream' })
           setOriginalFile(mriFile)
         }
         setMaskedBlob(overlayBlob && overlayBlob.size > 0 ? overlayBlob : null)

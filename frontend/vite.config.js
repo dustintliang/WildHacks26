@@ -18,13 +18,27 @@ function serveNiftiPlugin() {
   let outDir = path.join(FRONTEND_ROOT, 'dist')
 
   const serveFile = (res, filePath, contentType = 'application/octet-stream') => {
-    const stat = fs.statSync(filePath)
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Content-Length': stat.size,
-      'Cache-Control': 'public, max-age=3600',
-    })
-    fs.createReadStream(filePath).pipe(res)
+    try {
+      const stat = fs.statSync(filePath)
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Content-Length': stat.size,
+        'Cache-Control': 'public, max-age=3600',
+        'Content-Encoding': 'identity',
+        'X-Content-Type-Options': 'nosniff',
+      })
+      const stream = fs.createReadStream(filePath)
+      stream.on('error', (err) => {
+        console.error(`[serve-nifti] stream error for ${filePath}:`, err)
+        if (!res.headersSent) res.writeHead(500)
+        res.end()
+      })
+      stream.pipe(res)
+    } catch (err) {
+      console.error(`[serve-nifti] stat error for ${filePath}:`, err)
+      res.writeHead(500)
+      res.end()
+    }
   }
 
   const resolveBackendFile = (prefix, rootDir, url) => {
@@ -43,7 +57,7 @@ function serveNiftiPlugin() {
       }
 
       const cleanUrl = req.url.split(/[?#]/)[0]
-      if (cleanUrl.endsWith('.nii.gz')) {
+      if (cleanUrl.endsWith('.nii.gz') || cleanUrl.endsWith('.nii')) {
         const filePath = path.join(publicDir, cleanUrl)
         if (fs.existsSync(filePath)) {
           serveFile(res, filePath)
