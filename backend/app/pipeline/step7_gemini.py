@@ -46,13 +46,10 @@ def generate_gemini_report(
         ), warnings
 
     try:
-        import google.generativeai as genai
+        from google import genai
 
         # Configure the API
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel(GEMINI_MODEL)
-
-        # Build the prompt content
+        client = genai.Client(api_key=GEMINI_API_KEY)
         content_parts = []
 
         # Add system prompt context
@@ -98,7 +95,7 @@ def generate_gemini_report(
         )
 
         # Send to Gemini
-        response = model.generate_content(content_parts)
+        response = client.models.generate_content(model=GEMINI_MODEL, contents=content_parts)
 
         # Parse response
         response_text = response.text
@@ -114,8 +111,8 @@ def generate_gemini_report(
 
     except ImportError:
         msg = (
-            "google-generativeai package not installed. "
-            "Install with: pip install google-generativeai"
+            "google-genai package not installed. "
+            "Install with: pip install google-genai"
         )
         logger.warning(msg)
         warnings.append(msg)

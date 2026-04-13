@@ -164,7 +164,7 @@ async def analyze(file: UploadFile = File(...)):
             "status": "processing",
             "message": (
                 f"Analysis started for '{filename}'. "
-                f"Poll GET /analyze/{job_id} for per-artery findings "
+                f"Poll GET /results/{job_id} for per-artery findings "
                 f"or GET /render/{job_id} for mask metadata."
             ),
         },
@@ -242,7 +242,7 @@ async def analyze_demo():
             "job_id": job_id,
             "status": "processing",
             "message": (
-                f"Demo analysis started. Poll GET /analyze/{job_id} for per-artery findings "
+                f"Demo analysis started. Poll GET /results/{job_id} for per-artery findings "
                 f"or GET /render/{job_id} for mask metadata."
             ),
         },
@@ -265,8 +265,9 @@ async def get_demo_nifti():
 # ---------------------------------------------------------------------------
 # GET /results/{job_id} — unified polling endpoint
 # ---------------------------------------------------------------------------
-@app.get("/analyze/{job_id}", tags=["Analysis"])
-async def get_analyze(job_id: str):
+@app.get("/results/{job_id}", tags=["Analysis"])
+@app.get("/analyze/{job_id}", tags=["Analysis"]) # Alias for frontend compatibility
+async def get_results(job_id: str):
     """
     Retrieve per-artery findings for a given job.
 
@@ -274,7 +275,20 @@ async def get_analyze(job_id: str):
     for all 11 arteries when complete, or processing/failed status while running.
     """
     if job_id not in _jobs:
-        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
+        # Fallback: check if the result is already on disk (e.g. server restarted)
+        cache_path = OUTPUT_DIR / job_id / "result.json"
+        if cache_path.exists():
+            try:
+                with open(cache_path, "r") as f:
+                    cached_result = json.load(f)
+                _jobs[job_id] = {
+                    "status": "complete",
+                    "result": cached_result,
+                }
+            except Exception:
+                raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found and cache load failed.")
+        else:
+            raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
 
     job = _jobs[job_id]
 
@@ -311,7 +325,11 @@ async def get_analyze(job_id: str):
         }
 
     gemini = result.get("gemini_report", {})
-    narrative = gemini.get("narrative_summary", "") if isinstance(gemini, dict) else ""
+    # Handle both new and old response formats
+    if isinstance(gemini, dict):
+        narrative = gemini.get("narrative_summary", "")
+    else:
+        narrative = ""
 
     return JSONResponse(status_code=200, content={
         "job_id": job_id,
@@ -334,7 +352,17 @@ async def get_render(job_id: str):
     Voxel data is never inlined — fetch the NIfTI files via the /output static mount.
     """
     if job_id not in _jobs:
-        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
+        # Fallback check as above
+        cache_path = OUTPUT_DIR / job_id / "result.json"
+        if cache_path.exists():
+            try:
+                with open(cache_path, "r") as f:
+                    cached_result = json.load(f)
+                _jobs[job_id] = {"status": "complete", "result": cached_result}
+            except Exception:
+                raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found and cache load failed.")
+        else:
+            raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
 
     job = _jobs[job_id]
 
@@ -375,117 +403,8 @@ async def get_render(job_id: str):
     })
 
 
-# ---------------------------------------------------------------------------
-# GET /analyze/{job_id}
-# ---------------------------------------------------------------------------
-@app.get("/analyze/{job_id}", tags=["Analysis"])
-async def get_analyze(job_id: str):
-    """
-    Retrieve per-artery findings for a given job.
-
-    Returns binary_segments (voxels, centerlines, findings, analysis sentence)
-    for all 11 arteries when complete, or processing/failed status while running.
-    """
-    if job_id not in _jobs:
-        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
-
-    job = _jobs[job_id]
-
-    if job["status"] == "processing":
-        return JSONResponse(status_code=200, content={
-            "job_id": job_id,
-            "status": "processing",
-            "progress": job.get("progress", {"step": 0, "total": 8, "action": "Starting..."}),
-        })
-    if job["status"] == "failed":
-        return JSONResponse(status_code=200, content={
-            "job_id": job_id,
-            "status": "failed",
-            "message": job.get("error", "Pipeline failed with unknown error."),
-        })
-
-    result = job["result"]
-    binary_segments = {}
-    for name in ARTERY_NAMES:
-        artery = result.get("arteries", {}).get(name, {})
-        binary_segments[name] = {
-            "visible": artery.get("visible", False),
-            "voxel_count": artery.get("voxel_count", 0),
-            "data": artery.get("voxel_indices", []),
-            "centerline": artery.get("centerline_indices", []),
-            "mean_radius_mm": artery.get("mean_radius_mm", 0.0),
-            "segment_length_mm": artery.get("segment_length_mm", 0.0),
-            "findings": {
-                "stenosis": artery.get("stenosis_candidates", []),
-                "aneurysms": artery.get("aneurysm_candidates", []),
-                "tortuosity": artery.get("tortuosity"),
-            },
-            "analysis": artery.get("analysis", ""),
-        }
-
-    gemini = result.get("gemini_report", {})
-    narrative = gemini.get("narrative_summary", "") if isinstance(gemini, dict) else ""
-
-    return JSONResponse(status_code=200, content={
-        "job_id": job_id,
-        "status": "complete",
-        "binary_segments": binary_segments,
-        "risk_scores": result.get("risk_scores", {}),
-        "narrative_summary": narrative,
-    })
 
 
-# ---------------------------------------------------------------------------
-# GET /render/{job_id}
-# ---------------------------------------------------------------------------
-@app.get("/render/{job_id}", tags=["Analysis"])
-async def get_render(job_id: str):
-    """
-    Retrieve mask metadata and NIfTI URLs for a given job.
-
-    Returns shape, voxel_size, affine, mask_url, and overlay_url when complete.
-    Voxel data is never inlined — fetch the NIfTI files via the /output static mount.
-    """
-    if job_id not in _jobs:
-        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
-
-    job = _jobs[job_id]
-
-    if job["status"] == "processing":
-        return JSONResponse(status_code=200, content={
-            "job_id": job_id,
-            "status": "processing",
-            "progress": job.get("progress", {"step": 0, "total": 8, "action": "Starting..."}),
-        })
-    if job["status"] == "failed":
-        return JSONResponse(status_code=200, content={
-            "job_id": job_id,
-            "status": "failed",
-            "message": job.get("error", "Pipeline failed with unknown error."),
-        })
-
-    result = job["result"]
-
-    def _to_url(abs_path: str) -> str:
-        if not abs_path:
-            return ""
-        try:
-            from pathlib import Path
-            rel = Path(abs_path).relative_to(OUTPUT_DIR)
-            return f"/output/{rel}"
-        except Exception:
-            return ""
-
-    return JSONResponse(status_code=200, content={
-        "job_id": job_id,
-        "status": "complete",
-        "shape": result.get("mask_shape", []),
-        "voxel_size": result.get("mask_voxel_size", []),
-        "affine": result.get("mask_affine", []),
-        "mask_url": _to_url(result.get("output_mask_path", "")),
-        "overlay_url": _to_url(result.get("overlay_path", "")),
-        "vessel_voxel_count": result.get("vessel_voxel_count", 0),
-    })
 
 
 # ---------------------------------------------------------------------------
@@ -534,11 +453,18 @@ async def _run_pipeline_async(job_id: str, input_path: str, is_demo: bool = Fals
     try:
         from app.pipeline.orchestrator import run_pipeline
         result = await asyncio.to_thread(run_pipeline, job_id, input_path, _progress)
+        
+        # Save result to disk for persistence across server restarts
+        job_dir = OUTPUT_DIR / job_id
+        job_dir.mkdir(parents=True, exist_ok=True)
+        with open(job_dir / "result.json", "w") as f:
+            json.dump(result, f)
+            
         _jobs[job_id] = {
             "status": "complete",
             "result": result,
         }
-        logger.info(f"Job {job_id} completed successfully.")
+        logger.info(f"Job {job_id} completed successfully and saved to disk.")
     except Exception as exc:
         logger.error(f"Job {job_id} failed: {exc}", exc_info=True)
         _jobs[job_id] = {
